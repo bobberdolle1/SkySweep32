@@ -85,6 +85,28 @@ ESP32 → OLED:
 
 ---
 
+### 🟣 Уровень 4: «Juggernaut» (~$100-200 / ~10000-20000₽)
+
+**Апгрейд Sentinel**: Архитектура активного подавления (РЭБ)
+
+| Дополнительный компонент | Модель | Назначение |
+|--------------------------|--------|------------|
+| VCO Генератор (5.8 ГГц) | 5.7-5.9Ghz VCO + RF PA 10W | Подавление Аналог/DJI/Walksnail/OpenIPC |
+| VCO Генератор (2.4 ГГц) | 2.4-2.5Ghz VCO + RF PA 10W | Подавление ELRS/DJI/Wi-Fi |
+| VCO Генератор (900 МГц) | 868-915Mhz VCO + RF PA 10W | Подавление ELRS/Crossfire |
+| VCO Генератор (1.5 ГГц) | 1.5Ghz VCO + RF PA 2W | GPS/ГЛОНАСС Джамминг |
+| Транзисторный модуль | MOSFET 4-Channel | Коммутация питания VCO |
+
+**Новые возможности**:
+- ✅ 'Умный' купол 5.8 ГГц (рушит цифровые ACK пакеты Walksnail/DJI и слепит Аналог)
+- ✅ Широкополосное подавление управления ELRS (900МГц / 2.4ГГц)
+- ✅ Автоматическое подавление навигации (GPS L1) при обнаружении любых дронов
+- ✅ Управление профилем шума (Sweep) через ЦАП (DAC) встроенный в ESP32
+
+> **ВНИМАНИЕ:** Для работы DAC используются пины **GPIO 25 и 26**. Если вы используете LoRa, перенесите её пины (RESET и CS) на GPIO 12 и 14.
+
+---
+
 ## 🎛️ Опциональные модули (для любого уровня)
 
 ### 🎤 Акустическое обнаружение (~$5 / ~500₽)
@@ -103,7 +125,9 @@ ESP32 → OLED:
 |-----|---------|---------|
 | GPIO 2 | NRF24L01+ CE | Base+ |
 | GPIO 5 | CC1101 CS | Standard+ |
+| GPIO 12 | LoRa RESET | Pro |
 | GPIO 13 | RX5808 CS | Standard+ |
+| GPIO 14 | LoRa CS | Pro |
 | GPIO 15 | NRF24L01+ CS | Base+ |
 | GPIO 16 | GPS RX (UART2) | Pro |
 | GPIO 17 | GPS TX (UART2) | Pro |
@@ -112,8 +136,8 @@ ESP32 → OLED:
 | GPIO 21 | I2C SDA (OLED) | Base+ |
 | GPIO 22 | I2C SCL (OLED) | Base+ |
 | GPIO 23 | SPI MOSI | Base+ |
-| GPIO 25 | LoRa RESET | Pro |
-| GPIO 26 | LoRa CS | Pro |
+| GPIO 25 | VCO DAC 1 Output | Juggernaut |
+| GPIO 26 | VCO DAC 2 Output | Juggernaut |
 | GPIO 27 | SD Card CS | Pro |
 | GPIO 32 | LoRa DIO1 | Pro |
 | GPIO 33 | LoRa DIO0 | Pro |

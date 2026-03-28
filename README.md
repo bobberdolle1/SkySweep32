@@ -24,6 +24,7 @@ SkySweep32 is an advanced passive drone detection system based on the ESP32 micr
 | 🟢 **Base** | Starter | ~$15-20 | ESP32 + OLED + NRF24L01+ (2.4 GHz) + Web Dashboard + BLE Remote ID |
 | 🟡 **Standard** | Hunter | ~$35-45 | Base + CC1101 (900 MHz) + RX5808 (5.8 GHz) + ML Classification |
 | 🔴 **Pro** | Sentinel | ~$60-80 | Standard + GPS + SD Card Logger + LoRa Mesh Network |
+| 🟣 **EW Mode** | Juggernaut | ~$100+ | Sentinel + 4x VCO Jamming Modules (5.8G, 2.4G, 900M, 1.5G) |
 
 **Optional add-ons**: 🎤 Acoustic Detection (~$5) | ⚔️ Countermeasures (auth required)
 
@@ -36,6 +37,7 @@ SkySweep32 is an advanced passive drone detection system based on the ESP32 micr
 - **Signal Fingerprinting**: Built-in `SignalDatabase` identifying known drone patterns (e.g., DJI OcuSync, FPV Analog, Crossfire) via band-matching and RSSI variance.
 - **ESP-NOW Mesh**: Free, autonomous node-to-node network sharing threat alerts, heartbeats, and GPS telemetry across massive areas without extra hardware.
 - **Power Management**: 4 dynamic power states (Full, Balanced, Low, Deep Sleep) with battery ADC monitoring and runtime estimates.
+- **Countermeasures (Juggernaut)**: Optional VCO signal injection covering DJI, Walksnail, OpenIPC, ELRS, and GPS Denial.
 - **Auto-Calibration Tool**: Integrated baseline noise calibration directly from the Web-UI.
 - **Alert System**: Non-blocking intelligent Buzzer and LED patterns scaling with Threat Levels (Info → Critical).
 - **Remote ID**: FAA ANSI/CTA-2063 compliant BLE drone identification natively on the ESP32.
@@ -67,8 +69,15 @@ SkySweep32 is an advanced passive drone detection system based on the ESP32 micr
 | NRF24L01+   | GPIO 15   | GPIO 2 | Base+ |
 | CC1101      | GPIO 5    | -      | Standard+ |
 | RX5808      | GPIO 13   | -      | Standard+ |
-| LoRa SX1276 | GPIO 26   | -      | Pro |
+| LoRa SX1276 | GPIO 14   | -      | Pro (Changed in v0.4) |
 | SD Card     | GPIO 27   | -      | Pro |
+
+#### EW Output Pins (Juggernaut)
+| Signal | ESP32 Pin | Purpose |
+|--------|-----------|---------|
+| DAC 1  | GPIO 25   | 5.8GHz / 2.4GHz VCO Sweep |
+| DAC 2  | GPIO 26   | 900MHz / 1.5GHz GPS VCO Sweep |
+| LORA_R | GPIO 12   | LoRa Reset moved here |
 
 #### I2C Bus (OLED Display)
 | Signal | ESP32 Pin |
@@ -169,6 +178,7 @@ SkySweep32 — продвинутая система пассивного обн
 - **Web-Дашборд и Интерактивная Карта**: Локальный веб-интерфейс по WiFi с картой (Leaflet.js) для трекинга дронов и операторов через Remote ID.
 - **Сигнатурная База (Fingerprinting)**: Динамическое распознавание 8 типов дронов (DJI OcuSync, FPV, Crossfire и др.) через анализ дисперсии RSSI и паттернов "прыжков".
 - **Своя Mesh-сеть (ESP-NOW)**: Самоорганизующаяся децентрализованная сеть оповещения между детекторами (0 рублей стоимости, использует WiFi чип ESP32).
+- **Активный РЭБ (Juggernaut)**: Управление каскадом из 4-х внешних VCO-генераторов (5.8GHz, 2.4GHz, 900MHz, 1.5GHz GPS) через DAC-пины для подавления DJI, Walksnail, BetaFPV, OpenIPC и ELRS.
 - **Power Management (Батарея)**: Глубокий сон, скалер частоты ЦП и ADC-отслеживание батареи. Позволяет работать от 18650 днями. Автоматическая калибровка шума из UI.
 - **Умная Система Уведомлений**: Неблокирующий диспетчер сигналов для зуммера (Buzzer) и LED с динамическими паттернами под каждый уровень угрозы.
 - **Оценка угроз**: 5-уровневая классификация (НЕТ/НИЗКАЯ/СРЕДНЯЯ/ВЫСОКАЯ/КРИТИЧЕСКАЯ).
@@ -200,8 +210,15 @@ SkySweep32 — продвинутая система пассивного обн
 | NRF24L01+   | GPIO 15   | GPIO 2             |
 | CC1101      | GPIO 5    | -                  |
 | RX5808      | GPIO 13   | -                  |
-| LoRa SX1276 | GPIO 26   | -                  |
+| LoRa SX1276 | GPIO 14   | -                  |
 | SD Card     | GPIO 27   | -                  |
+
+#### Пины генерации помех (Уровень Juggernaut)
+| Пин | Функция | 
+|-----|---------|
+| GPIO 25 | DAC 1 (Шум для 5.8GHz и 2.4GHz VCO) |
+| GPIO 26 | DAC 2 (Шум для 900MHz и 1.5GHz GPS VCO) |
+| GPIO 12 | LoRa RESET (перенесен с GPIO 25) |
 
 #### Шина I2C (OLED-дисплей)
 | Сигнал | Пин ESP32 |

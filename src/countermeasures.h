@@ -17,10 +17,13 @@ enum ThreatLevel {
 // Countermeasure types
 enum CountermeasureType {
     CM_NONE = 0,
-    CM_JAMMING_BROADBAND = 1,    // Wideband noise injection
-    CM_JAMMING_TARGETED = 2,     // Protocol-specific jamming
+    CM_JAMMING_BROADBAND = 1,    // Wideband noise injection (NRF/CC1101)
+    CM_JAMMING_TARGETED = 2,     // Protocol-specific jamming (NRF/CC1101)
     CM_PROTOCOL_INJECTION = 3,   // Command hijacking (RTH/Land)
-    CM_DEAUTH_FLOOD = 4          // Deauthentication attack (2.4GHz)
+    CM_DEAUTH_FLOOD = 4,         // Deauthentication attack (2.4GHz Wi-Fi)
+    CM_VCO_VIDEO_JAMMING = 5,    // 5.8GHz DAC Sweep for Video (Analog/Digital)
+    CM_VCO_CONTROL_JAMMING = 6,  // 900MHz/2.4GHz DAC Sweep for Control (ELRS)
+    CM_VCO_GPS_JAMMING = 7       // 1.5GHz GPS Denial
 };
 
 // Drone protocol signatures
@@ -31,7 +34,10 @@ enum DroneProtocol {
     PROTOCOL_MAVLINK = 3,            // 433/900 MHz
     PROTOCOL_ELRS = 4,               // 900 MHz/2.4 GHz
     PROTOCOL_CROSSFIRE = 5,          // 900 MHz
-    PROTOCOL_ANALOG_VIDEO = 6        // 5.8 GHz
+    PROTOCOL_ANALOG_VIDEO = 6,       // 5.8 GHz
+    PROTOCOL_WALKSNAIL = 7,          // 5.8 GHz Digital
+    PROTOCOL_BETAFPV_ARTLYNK = 8,    // 5.8 GHz Digital
+    PROTOCOL_OPENIPC = 9             // 5.8/2.4 GHz Wi-Fi Raw
 };
 
 // Threat assessment data
@@ -62,6 +68,10 @@ private:
     void injectMAVLinkRTH(uint8_t chipSelectPin);
     void injectDJIEmergencyLand(uint8_t chipSelectPin);
     void executeDeauthFlood(uint8_t chipSelectPin);
+    
+    // VCO Juggernaut operations
+    void executeVCOJamming(CountermeasureType type);
+    void sweepDAC(uint8_t dacPin, uint32_t duration, uint16_t minVoltage, uint16_t maxVoltage);
     
 public:
     CountermeasureSystem();

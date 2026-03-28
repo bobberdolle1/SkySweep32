@@ -1,8 +1,12 @@
 #include "countermeasures.h"
 
 // Countermeasure-specific constants (not in config.h)
-#define JAMMING_DURATION_MS     2000
-#define INJECTION_RETRY_COUNT   5
+#define JAMMING_DURATION_MS       2000
+#define INJECTION_RETRY_COUNT     5
+#define VCO_DAC_1_PIN             25  // 5.8GHz / 2.4GHz
+#define VCO_DAC_2_PIN             26  // 900MHz / 1.5GHz GPS
+
+#define ENABLE_GPS_JAMMING        true // Always jam GPS if any threat detected
 
 CountermeasureSystem::CountermeasureSystem() {
     systemArmed = false;
@@ -18,6 +22,12 @@ void CountermeasureSystem::initialize() {
     #ifdef ENABLE_COUNTERMEASURES
     Serial.println("[CM] *** COUNTERMEASURES ENABLED ***");
     Serial.println("[CM] Ensure legal authorization before use");
+    
+    // Initialize DAC pins for VCOs
+    pinMode(VCO_DAC_1_PIN, OUTPUT);
+    pinMode(VCO_DAC_2_PIN, OUTPUT);
+    dacWrite(VCO_DAC_1_PIN, 0);
+    dacWrite(VCO_DAC_2_PIN, 0);
     #endif
 }
 
@@ -64,13 +74,13 @@ ThreatLevel CountermeasureSystem::assessThreat(uint8_t moduleIndex, int rssiValu
 
 DroneProtocol CountermeasureSystem::analyzeSignalPattern(uint8_t moduleIndex, int rssi) {
     // Pattern recognition based on frequency band and signal characteristics
-    // This is a simplified heuristic - real implementation requires FFT analysis
     
     switch(moduleIndex) {
         case 0: // CC1101 (900 MHz)
             if (rssi > 70) {
                 // Strong 900MHz signal likely ELRS or Crossfire
-                return PROTOCOL_CROSSFIRE;
+                // ELRS uses LoRa which is very resilient, Crossfire is FSK/LoRa
+                return PROTOCOL_ELRS; 
             } else if (rssi > 50) {
                 return PROTOCOL_MAVLINK;
             }
@@ -78,17 +88,18 @@ DroneProtocol CountermeasureSystem::analyzeSignalPattern(uint8_t moduleIndex, in
             
         case 1: // NRF24L01+ (2.4 GHz)
             if (rssi > 75) {
-                // Very strong 2.4GHz likely DJI OcuSync
                 return PROTOCOL_DJI_OCUSYNC;
             } else if (rssi > 60) {
-                return PROTOCOL_DJI_LIGHTBRIDGE;
+                return PROTOCOL_OPENIPC; // OpenIPC or generic internal Wi-Fi
             }
             break;
             
         case 2: // RX5808 (5.8 GHz)
-            // 5.8GHz is typically analog video or DJI digital
-            if (rssi > 70) {
+            if (rssi > 80) {
                 return PROTOCOL_DJI_OCUSYNC;
+            } else if (rssi > 65) {
+                // High RSSI could be Walksnail / BetaFPV ArtLynk (digital)
+                return PROTOCOL_WALKSNAIL;
             } else {
                 return PROTOCOL_ANALOG_VIDEO;
             }
@@ -96,6 +107,52 @@ DroneProtocol CountermeasureSystem::analyzeSignalPattern(uint8_t moduleIndex, in
     }
     
     return PROTOCOL_UNKNOWN;
+}
+
+void CountermeasureSystem::sweepDAC(uint8_t dacPin, uint32_t duration, uint16_t minVoltage, uint16_t maxVoltage) {
+    #ifdef ENABLE_COUNTERMEASURES
+    uint32_t start = millis();
+    uint8_t dacValue = minVoltage;
+    int8_t step = 5;
+    
+    while(millis() - start < duration) {
+        dacWrite(dacPin, dacValue);
+        dacValue += step;
+        if(dacValue >= maxVoltage || dacValue <= minVoltage) {
+            step = -step; // Reverse sweep direction (triangle wave)
+        }
+        delayMicroseconds(50); // fast sweep
+    }
+    dacWrite(dacPin, 0); // turn off
+    #endif
+}
+
+void CountermeasureSystem::executeVCOJamming(CountermeasureType type) {
+    #ifdef ENABLE_COUNTERMEASURES
+    Serial.print("[CM] VCO Juggernaut Attack: ");
+    
+    switch(type) {
+        case CM_VCO_VIDEO_JAMMING:
+            Serial.println("5.8GHz / 2.4GHz Video (Analog/Digital)");
+            // Sweep DAC1 which controls 5.8GHz and 2.4GHz VCOs
+            sweepDAC(VCO_DAC_1_PIN, JAMMING_DURATION_MS, 0, 255);
+            break;
+        case CM_VCO_CONTROL_JAMMING:
+            Serial.println("900MHz/2.4GHz Control (ELRS)");
+            // Sweep DAC2 which controls 900MHz VCO
+            sweepDAC(VCO_DAC_2_PIN, JAMMING_DURATION_MS, 50, 200);
+            break;
+        case CM_VCO_GPS_JAMMING:
+            Serial.println("1.5GHz GPS Denial");
+            // Secondary sweep on DAC2 for GPS VCO
+            sweepDAC(VCO_DAC_2_PIN, JAMMING_DURATION_MS, 100, 150);
+            break;
+        default:
+            break;
+    }
+    #else
+    Serial.println("[CM] VCO Juggernaut disabled");
+    #endif
 }
 
 void CountermeasureSystem::executeWidebandjamming(uint8_t chipSelectPin, uint32_t frequency) {
@@ -242,6 +299,13 @@ bool CountermeasureSystem::executeCountermeasure(CountermeasureType type, uint8_
     
     Serial.printf("[CM] Executing countermeasure type %d\n", type);
     
+    // Always trigger GPS Jamming conceptually in EW mode
+    #if ENABLE_GPS_JAMMING
+    if (type != CM_VCO_GPS_JAMMING) {
+        executeVCOJamming(CM_VCO_GPS_JAMMING);
+    }
+    #endif
+    
     switch(type) {
         case CM_JAMMING_BROADBAND:
             executeWidebandjamming(chipSelectPin, 0);
@@ -262,6 +326,12 @@ bool CountermeasureSystem::executeCountermeasure(CountermeasureType type, uint8_
             
         case CM_DEAUTH_FLOOD:
             executeDeauthFlood(chipSelectPin);
+            return true;
+            
+        case CM_VCO_VIDEO_JAMMING:
+        case CM_VCO_CONTROL_JAMMING:
+        case CM_VCO_GPS_JAMMING:
+            executeVCOJamming(type);
             return true;
             
         default:
@@ -299,9 +369,20 @@ void CountermeasureSystem::autoRespond(uint8_t moduleIndex, int rssiValue, uint8
         case THREAT_CRITICAL:
             // Full countermeasures
             Serial.println("[CM] *** CRITICAL THREAT - FULL COUNTERMEASURES ***");
-            executeCountermeasure(CM_PROTOCOL_INJECTION, chipSelectPin);
-            delay(500);
-            executeCountermeasure(CM_JAMMING_BROADBAND, chipSelectPin);
+            
+            // Execute protocol specific heavy jamming
+            if (currentThreat.detectedProtocol == PROTOCOL_ELRS || currentThreat.detectedProtocol == PROTOCOL_CROSSFIRE) {
+                executeCountermeasure(CM_VCO_CONTROL_JAMMING, chipSelectPin);
+            } else if (currentThreat.detectedProtocol == PROTOCOL_WALKSNAIL || currentThreat.detectedProtocol == PROTOCOL_ANALOG_VIDEO || currentThreat.detectedProtocol == PROTOCOL_BETAFPV_ARTLYNK) {
+                executeCountermeasure(CM_VCO_VIDEO_JAMMING, chipSelectPin);
+            } else if (currentThreat.detectedProtocol == PROTOCOL_OPENIPC) {
+                executeCountermeasure(CM_DEAUTH_FLOOD, chipSelectPin);
+                executeCountermeasure(CM_VCO_VIDEO_JAMMING, chipSelectPin);
+            } else {
+                executeCountermeasure(CM_PROTOCOL_INJECTION, chipSelectPin);
+                delay(500);
+                executeCountermeasure(CM_JAMMING_BROADBAND, chipSelectPin);
+            }
             break;
             
         default:
@@ -329,6 +410,9 @@ const char* CountermeasureSystem::getProtocolString(DroneProtocol protocol) {
         case PROTOCOL_ELRS:             return "ExpressLRS";
         case PROTOCOL_CROSSFIRE:        return "TBS Crossfire";
         case PROTOCOL_ANALOG_VIDEO:     return "Analog Video";
+        case PROTOCOL_WALKSNAIL:        return "Walksnail Avatar";
+        case PROTOCOL_BETAFPV_ARTLYNK:  return "BetaFPV ArtLynk";
+        case PROTOCOL_OPENIPC:          return "OpenIPC Digital";
         default:                        return "Unknown";
     }
 }

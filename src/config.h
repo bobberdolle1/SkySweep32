@@ -14,9 +14,10 @@
 // #define TIER_BASE       // ESP32 + OLED + NRF24L01+ (~$15-20)
 // #define TIER_STANDARD   // Base + CC1101 + RX5808 (~$35-45)
 // #define TIER_PRO        // Standard + GPS + SD + LoRa (~$60-80)
+// #define TIER_JUGGERNAUT // Pro + 4x VCO Jammers (~$100+)
 
 // Default to TIER_STANDARD if nothing defined
-#if !defined(TIER_BASE) && !defined(TIER_STANDARD) && !defined(TIER_PRO)
+#if !defined(TIER_BASE) && !defined(TIER_STANDARD) && !defined(TIER_PRO) && !defined(TIER_JUGGERNAUT)
     #define TIER_STANDARD
 #endif
 
@@ -50,8 +51,8 @@
     #endif
 #endif
 
-// --- Tier: Pro (adds GPS, SD, LoRa) ---
-#if defined(TIER_PRO)
+// --- Tier: Pro & Juggernaut (adds GPS, SD, LoRa) ---
+#if defined(TIER_PRO) || defined(TIER_JUGGERNAUT)
     #ifndef MODULE_GPS
         #define MODULE_GPS                // GPS geolocation (NEO-6M/7M)
     #endif
@@ -60,6 +61,13 @@
     #endif
     #ifndef MODULE_LORA
         #define MODULE_LORA               // LoRa mesh networking (SX1276)
+    #endif
+#endif
+
+// --- Tier: Juggernaut (adds EW) ---
+#if defined(TIER_JUGGERNAUT)
+    #ifndef ENABLE_COUNTERMEASURES
+        #define ENABLE_COUNTERMEASURES    // Enable DAC VCO jamming
     #endif
 #endif
 
@@ -106,10 +114,14 @@
 #define GPS_UPDATE_INTERVAL 1000
 
 // --- LoRa SX1276 ---
-#define PIN_LORA_CS         26
+#define PIN_LORA_CS         14    // Changed from 26
 #define PIN_LORA_DIO0       33
 #define PIN_LORA_DIO1       32
-#define PIN_LORA_RESET      25
+#define PIN_LORA_RESET      12    // Changed from 25
+
+// --- VCO DACs (Juggernaut) ---
+#define PIN_VCO_DAC_1       25
+#define PIN_VCO_DAC_2       26
 
 // --- SD Card ---
 #define PIN_SD_CS           27
@@ -216,7 +228,7 @@
 // VERSION
 // ============================================================================
 
-#define SKYSWEEP_VERSION        "0.3.0"
+#define SKYSWEEP_VERSION        "0.4.0"
 #define SKYSWEEP_BUILD_DATE     __DATE__
 
 // ============================================================================
