@@ -1,0 +1,48 @@
+name: PlatformIO CI
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Cache PlatformIO
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.platformio
+          .pio
+        key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
+        restore-keys: |
+          ${{ runner.os }}-pio-
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio
+    
+    - name: Build firmware
+      run: pio run
+    
+    - name: Build with countermeasures enabled
+      run: pio run -e esp32dev
+      env:
+        PLATFORMIO_BUILD_FLAGS: -DENABLE_COUNTERMEASURES
+    
+    - name: Archive firmware
+      uses: actions/upload-artifact@v3
+      with:
+        name: firmware
+        path: .pio/build/esp32dev/firmware.bin

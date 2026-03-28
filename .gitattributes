@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.{cmd,[cC][mM][dD]} text eol=crlf
+*.{bat,[bB][aA][tT]} text eol=crlf
+*.cpp linguist-language=C++
+*.h linguist-language=C++
+*.ino linguist-language=C++
+docs/** linguist-documentation
+*.md linguist-detectable
