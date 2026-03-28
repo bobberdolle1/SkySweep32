@@ -48,6 +48,8 @@
 #define CC1101_TEST1        0x2D
 #define CC1101_TEST0        0x2E
 #define CC1101_PATABLE      0x3E
+#define CC1101_TXFIFO       0x3F
+#define CC1101_RXFIFO       0x3F
 
 // Status Registers
 #define CC1101_PARTNUM      0x30

@@ -1,4 +1,5 @@
 #include "espnow_mesh.h"
+#include "power_manager.h"
 
 ESPNowMesh espNowMesh;
 ESPNowMesh* ESPNowMesh::instance = nullptr;
@@ -219,7 +220,6 @@ bool ESPNowMesh::sendHeartbeat() {
     msg.timestamp = millis();
     
     // Include power manager data if available
-    extern class PowerManager powerManager;
     msg.payload.heartbeat.batteryV = powerManager.getBatteryVoltage();
     msg.payload.heartbeat.threatLevel = 0;  // Will be set by main loop
     msg.payload.heartbeat.activeModules = RF_MODULE_COUNT;

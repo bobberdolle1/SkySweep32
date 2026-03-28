@@ -67,12 +67,12 @@ footer{text-align:center;padding:16px;color:#484f58;font-size:12px}
 <body>
 <div class="header">
   <h1>🛡️ SkySweep32</h1>
-  <span class="status ok" id="connStatus">● Connected</span>
+  <span class="status ok" id="connStatus">● Подключено</span>
 </div>
 <div class="grid">
   <!-- RF Modules -->
   <div class="card">
-    <h2>📡 RF Modules</h2>
+    <h2>📡 Радиомодули</h2>
     <div id="rfModules">
       <div class="rf-module" id="rf0">
         <span class="name">CC1101</span>
@@ -93,51 +93,51 @@ footer{text-align:center;padding:16px;color:#484f58;font-size:12px}
   </div>
   <!-- Threat Level -->
   <div class="card">
-    <h2>⚠️ Threat Assessment</h2>
+    <h2>⚠️ Оценка Угрозы</h2>
     <div class="threat-box">
-      <div class="threat-level none" id="threatLevel">NONE</div>
-      <div style="margin-top:12px;color:#8b949e" id="threatProto">No active threats</div>
-      <button style="margin-top:15px;width:100%;background:#238636;color:white;border:none;padding:8px;border-radius:4px;cursor:pointer;font-weight:bold" onclick="calibrateNoise()">🎛️ Auto-Calibrate Noise Floor</button>
+      <div class="threat-level none" id="threatLevel">НЕТ</div>
+      <div style="margin-top:12px;color:#8b949e" id="threatProto">Угроз не обнаружено</div>
+      <button style="margin-top:15px;width:100%;background:#238636;color:white;border:none;padding:8px;border-radius:4px;cursor:pointer;font-weight:bold" onclick="calibrateNoise()">🎛️ Авто-Калибровка Шума</button>
     </div>
   </div>
   <!-- Detected Drones -->
   <div class="card">
-    <h2>🚁 Detected Drones (Remote ID)</h2>
+    <h2>🚁 Найденные Дроны (Remote ID)</h2>
     <div class="drone-list" id="droneList">
-      <div style="color:#484f58;text-align:center;padding:20px">No drones detected</div>
+      <div style="color:#484f58;text-align:center;padding:20px">Дроны не обнаружены</div>
     </div>
   </div>
   <!-- Map -->
   <div class="card" style="grid-column:1/-1">
-    <h2>🗺️ Detection Map</h2>
+    <h2>🗺️ Карта Обнаружений</h2>
     <div id="map"></div>
-    <div style="margin-top:8px;font-size:11px;color:#484f58">🔵 Drones &nbsp; 🟠 Operators &nbsp; Map updates on Remote ID detections</div>
+    <div style="margin-top:8px;font-size:11px;color:#484f58">🔵 Дроны &nbsp; 🟠 Операторы &nbsp; Обновляется по данным Remote ID</div>
   </div>
   <!-- System Stats -->
   <div class="card">
-    <h2>📊 System Status</h2>
+    <h2>📊 Статус Системы</h2>
     <div class="stats">
-      <div class="stat"><div class="value" id="uptime">0s</div><div class="label">Uptime</div></div>
-      <div class="stat"><div class="value" id="heap">0</div><div class="label">Free Heap (KB)</div></div>
-      <div class="stat"><div class="value" id="wsClients">0</div><div class="label">WS Clients</div></div>
-      <div class="stat"><div class="value" id="detCount">0</div><div class="label">Detections</div></div>
-      <div class="stat"><div class="value" id="batPct">--%</div><div class="label">Battery</div></div>
-      <div class="stat"><div class="value" id="pwrMode">--</div><div class="label">Power Mode</div></div>
-      <div class="stat"><div class="value" id="batV">--V</div><div class="label">Voltage</div></div>
-      <div class="stat"><div class="value" id="estMin">--</div><div class="label">Est. Runtime</div></div>
+      <div class="stat"><div class="value" id="uptime">0с</div><div class="label">Аптайм</div></div>
+      <div class="stat"><div class="value" id="heap">0</div><div class="label">ОЗУ (КБ)</div></div>
+      <div class="stat"><div class="value" id="wsClients">0</div><div class="label">Клиентов</div></div>
+      <div class="stat"><div class="value" id="detCount">0</div><div class="label">Обнаружений</div></div>
+      <div class="stat"><div class="value" id="batPct">--%</div><div class="label">Батарея</div></div>
+      <div class="stat"><div class="value" id="pwrMode">--</div><div class="label">Режим</div></div>
+      <div class="stat"><div class="value" id="batV">--В</div><div class="label">Вольтаж</div></div>
+      <div class="stat"><div class="value" id="estMin">--</div><div class="label">Ост. время</div></div>
     </div>
     <div style="margin-top:12px">
-      <h2 style="margin-bottom:8px">Modules</h2>
+      <h2 style="margin-bottom:8px">Модули</h2>
       <div id="moduleList"></div>
     </div>
   </div>
   <!-- Activity Log -->
   <div class="card" style="grid-column:1/-1">
-    <h2>📋 Activity Log</h2>
+    <h2>📋 Журнал Событий</h2>
     <div class="log" id="actLog"></div>
   </div>
 </div>
-<footer>SkySweep32 v%VERSION% | Passive Drone Detector | <a href="https://github.com/bobberdolle1/SkySweep32" style="color:#58a6ff">GitHub</a></footer>
+<footer>SkySweep32 v%VERSION% | Пассивный Детектор | <a href="https://github.com/bobberdolle1/SkySweep32" style="color:#58a6ff">GitHub</a></footer>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 let map,droneMarkers={},mapReady=false;
@@ -178,8 +178,8 @@ let ws,reconTimer,detections=0;
 const moduleMap={CC1101:0,'NRF24L01+':1,NRF24:1,RX5808:2};
 function connect(){
   ws=new WebSocket(WS_URL);
-  ws.onopen=()=>{document.getElementById('connStatus').className='status ok';document.getElementById('connStatus').textContent='● Connected';addLog('Connected to SkySweep32','det')};
-  ws.onclose=()=>{document.getElementById('connStatus').className='status warn';document.getElementById('connStatus').textContent='● Reconnecting...';reconTimer=setTimeout(connect,2000)};
+  ws.onopen=()=>{document.getElementById('connStatus').className='status ok';document.getElementById('connStatus').textContent='● Подключено';addLog('Успешное подключение к SkySweep32','det')};
+  ws.onclose=()=>{document.getElementById('connStatus').className='status warn';document.getElementById('connStatus').textContent='● Переподключение...';reconTimer=setTimeout(connect,2000)};
   ws.onerror=()=>{ws.close()};
   ws.onmessage=(e)=>{
     try{const d=JSON.parse(e.data);handleMsg(d)}catch(err){}
@@ -200,10 +200,11 @@ function handleMsg(d){
     }
   }else if(d.type==='threat'){
     const el=document.getElementById('threatLevel');
-    el.textContent=d.level;
+    const tMap={'NONE':'НЕТ','LOW':'НИЗКАЯ','MEDIUM':'СРЕДНЯЯ','HIGH':'ВЫСОКАЯ','CRITICAL':'КРИТИЧЕСКАЯ'};
+    el.textContent=tMap[d.level]||d.level;
     el.className='threat-level '+d.level.toLowerCase();
     document.getElementById('threatProto').textContent=d.protocol||'';
-    if(d.level!=='NONE')addLog('Threat: '+d.level+' ('+d.protocol+')','warn');
+    if(d.level!=='NONE')addLog('Угроза: '+el.textContent+' ('+(d.protocol||'Неизвестно')+')','warn');
   }else if(d.type==='drone'){
     detections++;
     document.getElementById('detCount').textContent=detections;
@@ -212,10 +213,10 @@ function handleMsg(d){
     const item=document.createElement('div');
     item.className='drone-item';
     item.innerHTML='<span class="id">'+d.id+'</span><span>'+
-      (d.lat?d.lat.toFixed(4)+', '+d.lon.toFixed(4):'No GPS')+'</span><span>'+
-      (d.alt?d.alt.toFixed(0)+'m':'')+'</span>';
+      (d.lat?d.lat.toFixed(4)+', '+d.lon.toFixed(4):'Нет GPS')+'</span><span>'+
+      (d.alt?d.alt.toFixed(0)+'м':'')+'</span>';
     list.prepend(item);
-    addLog('Drone: '+d.id,'det');
+    addLog('Обнаружен Дрон: '+d.id,'det');
     updateMapDrone(d.id,d.lat,d.lon,d.alt);
   }else if(d.type==='status'){
     document.getElementById('uptime').textContent=formatUptime(d.uptime);
@@ -225,8 +226,9 @@ function handleMsg(d){
       document.getElementById('batPct').textContent=d.batPct+'%';
       document.getElementById('batPct').style.color=d.batPct<15?'#f85149':d.batPct<30?'#d29922':'#3fb950';
       document.getElementById('batV').textContent=d.batV.toFixed(2)+'V';
-      document.getElementById('pwrMode').textContent=d.pwrMode||'--';
-      document.getElementById('estMin').textContent=d.estMin>60?Math.floor(d.estMin/60)+'h '+d.estMin%60+'m':d.estMin+'m';
+      const mMap={'Full':'Полный','Balanced':'Сбаланс.','Low':'Эконом','Sleep':'Сон'};
+      document.getElementById('pwrMode').textContent=mMap[d.pwrMode]||d.pwrMode||'--';
+      document.getElementById('estMin').textContent=d.estMin>60?Math.floor(d.estMin/60)+'ч '+d.estMin%60+'м':d.estMin+'м';
     }
     if(d.modules){
       const ml=document.getElementById('moduleList');
@@ -235,9 +237,9 @@ function handleMsg(d){
   }
 }
 function formatUptime(s){
-  if(s<60)return s+'s';
-  if(s<3600)return Math.floor(s/60)+'m '+s%60+'s';
-  return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';
+  if(s<60)return s+'с';
+  if(s<3600)return Math.floor(s/60)+'м '+s%60+'с';
+  return Math.floor(s/3600)+'ч '+Math.floor((s%3600)/60)+'м';
 }
 function addLog(msg,cls){
   const el=document.getElementById('actLog');
@@ -246,15 +248,15 @@ function addLog(msg,cls){
   if(el.children.length>100)el.removeChild(el.lastChild);
 }
 function calibrateNoise(){
-  if(!confirm('This will sample current background RF noise and adjust threat thresholds. Ensure no drones are nearby. Proceed?')) return;
+  if(!confirm('Внимание! Будет произведен замер фонового радиошума для настройки фильтров. Убедитесь, что рядом нет работающих дронов. Продолжить?')) return;
   fetch('/api/calibrate',{method:'POST'}).then(r=>r.json()).then(d=>{
     if(d.status==='ok') {
-      addLog('Calibration complete. Base threshold: '+d.baseRssi,'ok');
-      alert('Calibration complete. New Thresholds applied.');
+      addLog('Калибровка завершена. Базовый порог: '+d.baseRssi,'ok');
+      alert('Калибровка завершена. Новые пороги угрозы применены.');
     }else{
-      alert('Calibration failed: '+d.msg);
+      alert('Ошибка калибровки: '+d.msg);
     }
-  }).catch(e=>alert('Error: '+e));
+  }).catch(e=>alert('Ошибка сети: '+e));
 }
 connect();
 </script>
@@ -417,14 +419,14 @@ bool SkySweepWebServer::begin(bool accessPointMode) {
     
     // --- Calibration API ---
     httpServer->on("/api/calibrate", HTTP_POST, [](AsyncWebServerRequest* request) {
-        SkySweepConfig cfg = configManager.get();
+        RuntimeConfig& cfg = configManager.get();
         // In a full implementation, this would sample actual RSSI across all modules for 5 seconds.
         // For this architecture demo, we reset thresholds to an optimized generic baseline.
-        cfg.thresholds.low = 35;
-        cfg.thresholds.medium = 50;
-        cfg.thresholds.high = 70;
-        cfg.thresholds.critical = 85;
-        configManager.update(cfg);
+        cfg.rssiThresholdLow = 35;
+        cfg.rssiThresholdMedium = 50;
+        cfg.rssiThresholdHigh = 70;
+        cfg.rssiThresholdCritical = 85;
+        configManager.save();
         Serial.println("[CALIB] Noise floor calibrated via API");
         request->send(200, "application/json", "{\"status\":\"ok\",\"baseRssi\":35}");
     });

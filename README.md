@@ -145,9 +145,10 @@ counterMeasures.armSystem(true);  // Uncomment this line
 
 ### Documentation
 
-- [Hardware Setup Guide](docs/en/hardware.md)
-- [Software API Reference](docs/en/software.md)
-- [Legal Compliance](docs/en/legal.md)
+- 🍼 **[Absolute Beginner Guide (Start Here)](docs/en/start_from_zero.md)** — No soldering, Lego-style assembly for beginners
+- 📘 [Hardware Setup Guide](docs/en/hardware.md) — Advanced wiring & BOM
+- 💻 [Software API Reference](docs/en/software.md) — REST & WebSocket APIs
+- ⚖️ [Legal Compliance](docs/en/legal.md) — Responsible use
 
 ### License
 
@@ -280,9 +281,10 @@ counterMeasures.armSystem(true);  // Раскомментировать эту �
 
 ### Документация
 
-- [Руководство по аппаратной части](docs/ru/hardware.md)
-- [Справочник API ПО](docs/ru/software.md)
-- [Правовое соответствие](docs/ru/legal.md)
+- 🍼 **[Сборка с Абсолютного Нуля (Начни отсюда)](docs/ru/start_from_zero.md)** — Никакой пайки, Лего-сборка для новичков (рядового бойца)
+- 📘 [Руководство по аппаратной части](docs/ru/hardware.md) — Инструкция для инженеров с полным BOM
+- 💻 [Справочник API ПО](docs/ru/software.md) — Документация REST и WebSocket
+- ⚖️ [Правовое соответствие](docs/ru/legal.md) — Правила использования
 
 ### Лицензия
 

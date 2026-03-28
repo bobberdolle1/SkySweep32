@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-03-28
+
+### Added
+- **Beginner Guides ("Start from Zero")**: New comprehensive assembly guides for both [English](docs/en/start_from_zero.md) and [Russian](docs/ru/start_from_zero.md) users. No soldering required, focus on modular Starter Tier assembly.
+- **Universal Flash Script**: Added `flash.bat` as a one-click firmware installer for Windows users, simplifying the setup process for non-technical users.
+
+### Localized
+- **Full Russian Web Dashboard**: Translated all real-time UI elements including Uptime, RAM usage, Battery percentages, Power modes, and Threat classifications into Russian.
+
+### Fixed
+- **WebServer Config Ref**: Corrected `RuntimeConfig` reference handling in `web_server.cpp` to ensure UI actions (like calibration) persist correctly.
+- **ConfigManager Cleanup**: Standardized configuration saving logic across the core architecture.
+
 ## [0.4.0] - 2026-03-28
 
 ### Added
