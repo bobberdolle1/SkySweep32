@@ -64,17 +64,19 @@ Connect the following pins from ESP32 to ALL three RF modules:
 
 Each SPI device needs a unique CS pin:
 
-| Module | ESP32 CS Pin | Module CS Pin |
-|--------|--------------|---------------|
-| CC1101 | GPIO 5 | CSN/SS |
-| NRF24L01+ | GPIO 17 | CSN |
-| RX5808 | GPIO 16 | CS |
+| Module | ESP32 CS Pin | Module CS Pin | Tier |
+|--------|--------------|---------------|------|
+| NRF24L01+ | GPIO 15 | CSN | Base+ |
+| CC1101 | GPIO 5 | CSN/SS | Standard+ |
+| RX5808 | GPIO 13 | CS | Standard+ |
+| LoRa SX1276 | GPIO 26 | NSS | Pro |
+| SD Card | GPIO 27 | CS | Pro |
 
 ### 4. NRF24L01+ CE Pin
 
 | ESP32 Pin | NRF24 Pin |
 |-----------|-----------|
-| GPIO 4 | CE |
+| GPIO 2 | CE |
 
 ### 5. RX5808 RSSI Pin
 
@@ -109,7 +111,7 @@ Each SPI device needs a unique CS pin:
 | GPIO 23 | MOSI |
 | GPIO 19 | MISO |
 | GPIO 18 | SCK |
-| GPIO 15 | CS |
+| GPIO 27 | CS |
 | 3.3V | VCC |
 | GND | GND |
 
@@ -120,12 +122,20 @@ Each SPI device needs a unique CS pin:
 | GPIO 23 | MOSI |
 | GPIO 19 | MISO |
 | GPIO 18 | SCK |
-| GPIO 5 | NSS/CS |
-| GPIO 2 | DIO0 |
-| GPIO 4 | DIO1 |
-| GPIO 14 | RST |
+| GPIO 26 | NSS/CS |
+| GPIO 33 | DIO0 |
+| GPIO 32 | DIO1 |
+| GPIO 25 | RST |
 | 3.3V | VCC |
 | GND | GND |
+
+### 10. Optional Peripherals (Alerts & Power)
+
+| ESP32 Pin | Component | Description |
+|-----------|-----------|-------------|
+| GPIO 4 | Passive Buzzer | PWM audio alerts |
+| GPIO 2 | LED | Visual threat indicator |
+| GPIO 36 | Battery ADC | Voltage divider (100k/100k) for 4.2V lipo |
 
 ## Module-Specific Notes
 

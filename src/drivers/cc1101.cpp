@@ -1,5 +1,7 @@
 #include "cc1101.h"
 
+#ifdef MODULE_CC1101
+
 CC1101Driver::CC1101Driver(uint8_t csPin, SPIClass* spi) {
     chipSelectPin = csPin;
     spiInstance = spi;
@@ -243,3 +245,78 @@ bool CC1101Driver::isConnected() {
     uint8_t version = getChipVersion();
     return (version != 0x00 && version != 0xFF);
 }
+
+// --- Multi-Band Support ---
+
+static const uint32_t BAND_FREQUENCIES[] = {
+    433920000,  // 433.92 MHz — EU/Asia ISM
+    868000000,  // 868.0 MHz  — EU ISM
+    915000000   // 915.0 MHz  — US/AU ISM
+};
+
+static const char* BAND_NAMES[] = {"433MHz", "868MHz", "915MHz"};
+
+void CC1101Driver::setBand(FreqBand band) {
+    if (band >= BAND_COUNT) return;
+    
+    setIdleMode();
+    setFrequency(BAND_FREQUENCIES[band]);
+    
+    // Recalibrate after frequency change
+    sendStrobe(CC1101_SCAL);
+    delay(1);
+    
+    setRxMode();
+    Serial.printf("[CC1101] Band: %s\n", BAND_NAMES[band]);
+}
+
+CC1101Driver::BandScanResult CC1101Driver::scanAllBands(uint16_t dwellMs) {
+    BandScanResult result;
+    
+    for (uint8_t b = 0; b < BAND_COUNT; b++) {
+        setIdleMode();
+        setFrequency(BAND_FREQUENCIES[b]);
+        sendStrobe(CC1101_SCAL);
+        delayMicroseconds(800);
+        setRxMode();
+        delay(dwellMs);
+        
+        result.rssi[b] = readRSSI();
+        result.activity[b] = (result.rssi[b] > -75);  // Activity threshold
+    }
+    
+    // Restore to primary band (915 MHz default)
+    setFrequency(currentFrequency);
+    sendStrobe(CC1101_SCAL);
+    delayMicroseconds(800);
+    setRxMode();
+    
+    return result;
+}
+
+void CC1101Driver::spectrumScan(uint32_t startHz, uint32_t endHz, uint32_t stepHz,
+                                 int8_t* rssiOut, uint16_t maxPoints, uint16_t dwellMs) {
+    uint16_t idx = 0;
+    
+    for (uint32_t freq = startHz; freq <= endHz && idx < maxPoints; freq += stepHz, idx++) {
+        setIdleMode();
+        setFrequency(freq);
+        sendStrobe(CC1101_SCAL);
+        delayMicroseconds(800);
+        setRxMode();
+        delay(dwellMs);
+        
+        rssiOut[idx] = readRSSI();
+    }
+    
+    // Restore original frequency
+    setFrequency(currentFrequency);
+    sendStrobe(CC1101_SCAL);
+    delayMicroseconds(800);
+    setRxMode();
+    
+    Serial.printf("[CC1101] Spectrum scan: %u-%u MHz, %u points\n",
+                  startHz / 1000000, endHz / 1000000, idx);
+}
+
+#endif // MODULE_CC1101

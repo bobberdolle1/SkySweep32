@@ -1,4 +1,7 @@
 #include "gps_module.h"
+
+#ifdef MODULE_GPS
+
 #include <cmath>
 
 GPSModule::GPSModule(uint8_t rxPin, uint8_t txPin) : lastUpdateTime(0) {
@@ -9,11 +12,11 @@ GPSModule::GPSModule(uint8_t rxPin, uint8_t txPin) : lastUpdateTime(0) {
 bool GPSModule::begin(uint32_t baudRate) {
     Serial.println("[GPS] Initializing GPS module...");
     
-    gpsSerial->begin(baudRate, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
+    gpsSerial->begin(baudRate, SERIAL_8N1, PIN_GPS_RX, PIN_GPS_TX);
     
     delay(1000);
     
-    Serial.println("[GPS] GPS module ready");
+    Serial.printf("[GPS] GPS module ready (RX:%d TX:%d @ %d baud)\n", PIN_GPS_RX, PIN_GPS_TX, baudRate);
     return true;
 }
 
@@ -143,3 +146,5 @@ void GPSModule::printInfo() {
     Serial.printf("HDOP: %.2f\n", currentData.hdop);
     Serial.printf("Valid: %s\n", currentData.isValid ? "YES" : "NO");
 }
+
+#endif // MODULE_GPS

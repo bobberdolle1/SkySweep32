@@ -2,14 +2,13 @@
 #define DATA_LOGGER_H
 
 #include <Arduino.h>
+#include "config.h"
+
+#ifdef MODULE_SD_CARD
+
 #include <SD.h>
 #include <SPI.h>
 #include <ArduinoJson.h>
-
-#define SD_CS_PIN 15
-#define LOG_DIR "/logs"
-#define MAX_LOG_SIZE_MB 10
-#define MAX_LOG_FILES 50
 
 enum LogLevel {
     LOG_DEBUG = 0,
@@ -47,7 +46,7 @@ private:
 public:
     DataLogger();
     
-    bool begin(uint8_t csPin = SD_CS_PIN);
+    bool begin(uint8_t csPin = PIN_SD_CS);
     void end();
     
     bool logDetection(const DetectionLogEntry& entry);
@@ -66,4 +65,5 @@ public:
     String getCurrentLogFile() const;
 };
 
-#endif
+#endif // MODULE_SD_CARD
+#endif // DATA_LOGGER_H

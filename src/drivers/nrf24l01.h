@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 #include <SPI.h>
+#include "../config.h"
+
+#ifdef MODULE_NRF24
 
 // NRF24L01+ Register Map
 #define NRF24_CONFIG        0x00
@@ -93,6 +96,19 @@ public:
     bool isConnected();
     void startListening();
     void stopListening();
+    
+    // --- 2.4 GHz Spectrum Scanner ---
+    // Scan all 126 channels (2400-2525 MHz), returns activity map
+    struct ChannelScanResult {
+        uint8_t activity[126];   // Hit count per channel (0-255)
+        uint8_t peakChannel;     // Channel with most activity
+        uint8_t activeChannels;  // Number of channels with signal
+    };
+    
+    ChannelScanResult scanSpectrum(uint8_t passes = 50, uint16_t dwellUs = 200);
+    bool isChannelActive(uint8_t channel, uint8_t dwellUs = 200);
+    uint8_t getCurrentChannel() const { return currentChannel; }
 };
 
+#endif // MODULE_NRF24
 #endif // NRF24L01_H

@@ -1,13 +1,6 @@
 #include "countermeasures.h"
 
-// RSSI thresholds for threat classification
-#define RSSI_THRESHOLD_LOW      45
-#define RSSI_THRESHOLD_MEDIUM   60
-#define RSSI_THRESHOLD_HIGH     75
-#define RSSI_THRESHOLD_CRITICAL 85
-
-// Timing constants
-#define THREAT_TIMEOUT_MS       5000
+// Countermeasure-specific constants (not in config.h)
 #define JAMMING_DURATION_MS     2000
 #define INJECTION_RETRY_COUNT   5
 

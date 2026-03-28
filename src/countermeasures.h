@@ -3,9 +3,7 @@
 
 #include <Arduino.h>
 #include <SPI.h>
-
-// Compile-time feature flag
-// #define ENABLE_COUNTERMEASURES  // Uncomment to enable active countermeasures
+#include "config.h"
 
 // Threat classification
 enum ThreatLevel {

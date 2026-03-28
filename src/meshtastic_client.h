@@ -2,18 +2,11 @@
 #define MESHTASTIC_CLIENT_H
 
 #include <Arduino.h>
-#include <RadioLib.h>
+#include "config.h"
 
-#define LORA_CS_PIN 5
-#define LORA_DIO0_PIN 2
-#define LORA_DIO1_PIN 4
-#define LORA_RESET_PIN 14
-#define LORA_FREQUENCY 915.0
-#define LORA_BANDWIDTH 125.0
-#define LORA_SPREADING_FACTOR 7
-#define LORA_CODING_RATE 5
-#define LORA_SYNC_WORD 0x12
-#define LORA_TX_POWER 20
+#ifdef MODULE_LORA
+
+#include <RadioLib.h>
 
 struct MeshPacket {
     uint32_t nodeID;
@@ -71,4 +64,5 @@ public:
     float getLastSNR() const;
 };
 
-#endif
+#endif // MODULE_LORA
+#endif // MESHTASTIC_CLIENT_H

@@ -1,4 +1,7 @@
 #include "acoustic_detector.h"
+
+#ifdef MODULE_ACOUSTIC
+
 #include <math.h>
 
 #define EMA_ALPHA 0.25
@@ -202,3 +205,5 @@ void AcousticDetector::calibrate(uint16_t durationMs) {
     Serial.printf("[ACOUSTIC] Suggested FREQ_RATIO_ON: %.6f\n", maxRatio * 0.7f);
     Serial.printf("[ACOUSTIC] Suggested FREQ_RATIO_OFF: %.6f\n", minRatio * 1.5f);
 }
+
+#endif // MODULE_ACOUSTIC

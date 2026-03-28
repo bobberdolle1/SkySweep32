@@ -1,5 +1,7 @@
 #include "nrf24l01.h"
 
+#ifdef MODULE_NRF24
+
 NRF24L01Driver::NRF24L01Driver(uint8_t csPin, uint8_t cePin, SPIClass* spi) {
     chipSelectPin = csPin;
     chipEnablePin = cePin;
@@ -240,3 +242,80 @@ void NRF24L01Driver::startListening() {
 void NRF24L01Driver::stopListening() {
     digitalWrite(chipEnablePin, LOW);
 }
+
+// --- 2.4 GHz Spectrum Scanner ---
+
+NRF24L01Driver::ChannelScanResult NRF24L01Driver::scanSpectrum(uint8_t passes, uint16_t dwellUs) {
+    ChannelScanResult result;
+    memset(result.activity, 0, sizeof(result.activity));
+    result.peakChannel = 0;
+    result.activeChannels = 0;
+    
+    // Save current state
+    uint8_t savedChannel = currentChannel;
+    
+    // Disable auto-ack for raw scanning
+    writeRegister(NRF24_EN_AA, 0x00);
+    writeRegister(NRF24_RX_PW_P0, 32);
+    
+    for (uint8_t pass = 0; pass < passes; pass++) {
+        for (uint8_t ch = 0; ch < 126; ch++) {
+            // Set channel
+            writeRegister(NRF24_RF_CH, ch);
+            
+            // Enter RX mode briefly
+            setRxMode();
+            delayMicroseconds(dwellUs);
+            
+            // Check RPD (Received Power Detector)
+            // RPD is set if signal > -64 dBm was detected
+            if (readRegister(NRF24_RPD) & 0x01) {
+                if (result.activity[ch] < 255) {
+                    result.activity[ch]++;
+                }
+            }
+            
+            stopListening();
+        }
+    }
+    
+    // Find peak and count active channels
+    uint8_t maxActivity = 0;
+    for (uint8_t ch = 0; ch < 126; ch++) {
+        if (result.activity[ch] > 0) {
+            result.activeChannels++;
+        }
+        if (result.activity[ch] > maxActivity) {
+            maxActivity = result.activity[ch];
+            result.peakChannel = ch;
+        }
+    }
+    
+    // Restore original channel
+    setChannel(savedChannel);
+    startListening();
+    
+    Serial.printf("[NRF24] Spectrum: %d active channels, peak ch%d (%d.%03d GHz)\n",
+                  result.activeChannels, result.peakChannel,
+                  2400 + result.peakChannel, 0);
+    
+    return result;
+}
+
+bool NRF24L01Driver::isChannelActive(uint8_t channel, uint8_t dwellUs) {
+    if (channel > 125) return false;
+    
+    writeRegister(NRF24_RF_CH, channel);
+    setRxMode();
+    delayMicroseconds(dwellUs);
+    bool active = (readRegister(NRF24_RPD) & 0x01);
+    stopListening();
+    
+    // Restore
+    setChannel(currentChannel);
+    startListening();
+    
+    return active;
+}
+
+#endif // MODULE_NRF24

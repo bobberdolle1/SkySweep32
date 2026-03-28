@@ -1,20 +1,22 @@
 #include "meshtastic_client.h"
 
+#ifdef MODULE_LORA
+
 MeshtasticClient::MeshtasticClient() 
-    : isInitialized(false), lastTransmitTime(0), transmitInterval(30000), lora(nullptr) {
+    : isInitialized(false), lastTransmitTime(0), transmitInterval(LORA_TRANSMIT_INTERVAL), lora(nullptr) {
     localNodeID = generateNodeID();
 }
 
 bool MeshtasticClient::begin(float frequency) {
-    Serial.println("[Meshtastic] Initializing LoRa module...");
+    Serial.println("[LoRa] Initializing LoRa module...");
     
-    lora = new SX1276(new Module(LORA_CS_PIN, LORA_DIO0_PIN, LORA_RESET_PIN, LORA_DIO1_PIN));
+    lora = new SX1276(new Module(PIN_LORA_CS, PIN_LORA_DIO0, PIN_LORA_RESET, PIN_LORA_DIO1));
     
     int state = lora->begin(frequency, LORA_BANDWIDTH, LORA_SPREADING_FACTOR, 
                             LORA_CODING_RATE, LORA_SYNC_WORD, LORA_TX_POWER);
     
     if (state != RADIOLIB_ERR_NONE) {
-        Serial.printf("[Meshtastic] LoRa init failed, code: %d\n", state);
+        Serial.printf("[LoRa] Init failed, code: %d\n", state);
         isInitialized = false;
         return false;
     }
@@ -22,7 +24,9 @@ bool MeshtasticClient::begin(float frequency) {
     lora->setDio0Action([]() {});
     
     isInitialized = true;
-    Serial.printf("[Meshtastic] LoRa initialized (Node ID: 0x%08X)\n", localNodeID);
+    Serial.printf("[LoRa] Initialized (Node: 0x%08X, Freq: %.1f MHz)\n", localNodeID, frequency);
+    Serial.printf("[LoRa] Pins — CS:%d DIO0:%d DIO1:%d RST:%d\n", 
+                  PIN_LORA_CS, PIN_LORA_DIO0, PIN_LORA_DIO1, PIN_LORA_RESET);
     return true;
 }
 
@@ -52,11 +56,11 @@ bool MeshtasticClient::sendRawPacket(const uint8_t* data, size_t length) {
     
     if (state == RADIOLIB_ERR_NONE) {
         lastTransmitTime = millis();
-        Serial.println("[Meshtastic] Packet transmitted");
+        Serial.println("[LoRa] Packet transmitted");
         return true;
     }
     
-    Serial.printf("[Meshtastic] Transmit failed, code: %d\n", state);
+    Serial.printf("[LoRa] Transmit failed, code: %d\n", state);
     return false;
 }
 
@@ -80,14 +84,18 @@ void MeshtasticClient::processReceivedPacket(const uint8_t* data, size_t length,
     packet.snr = snr;
     packet.timestamp = millis();
     
+    // Limit stored packets to prevent memory issues
+    if (receivedPackets.size() >= 50) {
+        receivedPackets.erase(receivedPackets.begin());
+    }
     receivedPackets.push_back(packet);
     
     if (std::find(knownNodes.begin(), knownNodes.end(), packet.nodeID) == knownNodes.end()) {
         knownNodes.push_back(packet.nodeID);
-        Serial.printf("[Meshtastic] New node discovered: 0x%08X\n", packet.nodeID);
+        Serial.printf("[LoRa] New node discovered: 0x%08X\n", packet.nodeID);
     }
     
-    Serial.printf("[Meshtastic] Packet from 0x%08X (RSSI: %d dBm, SNR: %.2f dB)\n", 
+    Serial.printf("[LoRa] Packet from 0x%08X (RSSI: %d dBm, SNR: %.2f dB)\n", 
                  packet.nodeID, rssi, snr);
 }
 
@@ -100,8 +108,8 @@ bool MeshtasticClient::broadcastDetectionAlert(const DetectionAlert& alert) {
     memcpy(packet + offset, &localNodeID, 4);
     offset += 4;
     
-    packet[offset++] = 3;
-    packet[offset++] = 0;
+    packet[offset++] = 3; // hop limit
+    packet[offset++] = 0; // hop count
     
     memcpy(packet + offset, &alert, sizeof(DetectionAlert));
     offset += sizeof(DetectionAlert);
@@ -177,3 +185,5 @@ uint32_t MeshtasticClient::generateNodeID() {
     uint64_t mac = ESP.getEfuseMac();
     return (uint32_t)(mac & 0xFFFFFFFF);
 }
+
+#endif // MODULE_LORA

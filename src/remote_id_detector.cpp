@@ -1,34 +1,43 @@
 #include "remote_id_detector.h"
+
+#ifdef MODULE_REMOTE_ID
+
 #include <cmath>
 
 RemoteIDDetector::RemoteIDDetector(uint32_t scanIntervalMs) 
-    : scanInterval(scanIntervalMs), isScanning(false), bleScan(nullptr) {
+    : scanInterval(scanIntervalMs), isScanning(false), bleScan(nullptr), 
+      droneCount(0), lastScanTime(0) {
+    memset(detectedDrones, 0, sizeof(detectedDrones));
 }
 
 bool RemoteIDDetector::begin() {
     Serial.println("[RemoteID] Initializing BLE scanner...");
     
-    BLEDevice::init("SkySweep32_Scanner");
+    BLEDevice::init("SkySweep32");
     bleScan = BLEDevice::getScan();
     bleScan->setAdvertisedDeviceCallbacks(this);
     bleScan->setActiveScan(true);
     bleScan->setInterval(100);
     bleScan->setWindow(99);
     
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
+    // NOTE: WiFi mode is managed by web_server.cpp (WIFI_AP_STA)
+    // Do NOT call WiFi.mode() or WiFi.disconnect() here!
     
-    Serial.println("[RemoteID] BLE and WiFi scanners ready");
+    Serial.println("[RemoteID] BLE scanner ready");
     return true;
 }
 
 void RemoteIDDetector::update() {
-    cleanupOldDetections(30000); // Remove detections older than 30s
+    // Only scan periodically (non-blocking)
+    if (millis() - lastScanTime < scanInterval) return;
+    lastScanTime = millis();
+    
+    cleanupOldDetections(REMOTE_ID_CLEANUP_MS);
     
     if (!isScanning) {
         isScanning = true;
+        // Non-blocking BLE scan (duration in seconds)
         bleScan->start(scanInterval / 1000, false);
-        scanWiFiBeacons();
         isScanning = false;
     }
 }
@@ -70,25 +79,32 @@ void RemoteIDDetector::onResult(BLEAdvertisedDevice advertisedDevice) {
             return;
     }
     
-    // Update existing or add new
-    bool found = false;
-    for (auto& existing : detectedDrones) {
-        if (strcmp(existing.uasID, drone.uasID) == 0) {
-            if (drone.latitude != 0.0) existing.latitude = drone.latitude;
-            if (drone.longitude != 0.0) existing.longitude = drone.longitude;
-            if (drone.altitude != 0.0) existing.altitude = drone.altitude;
-            existing.rssi = drone.rssi;
-            existing.lastSeen = drone.lastSeen;
-            found = true;
-            break;
+    // Update existing drone or add new one
+    int existingIdx = findDroneByID(drone.uasID);
+    
+    if (existingIdx >= 0) {
+        // Update existing
+        if (drone.latitude != 0.0) detectedDrones[existingIdx].latitude = drone.latitude;
+        if (drone.longitude != 0.0) detectedDrones[existingIdx].longitude = drone.longitude;
+        if (drone.altitude != 0.0) detectedDrones[existingIdx].altitude = drone.altitude;
+        detectedDrones[existingIdx].rssi = drone.rssi;
+        detectedDrones[existingIdx].lastSeen = drone.lastSeen;
+    } else if (drone.isValid && droneCount < MAX_DETECTED_DRONES) {
+        // Add new (with bounds check!)
+        detectedDrones[droneCount] = drone;
+        droneCount++;
+        Serial.printf("[RemoteID] New drone detected: %s (RSSI: %d dBm) [%d/%d]\n", 
+                     drone.uasID, drone.rssi, droneCount, MAX_DETECTED_DRONES);
+    }
+}
+
+int RemoteIDDetector::findDroneByID(const char* uasID) {
+    for (uint8_t i = 0; i < droneCount; i++) {
+        if (strcmp(detectedDrones[i].uasID, uasID) == 0) {
+            return i;
         }
     }
-    
-    if (!found && drone.isValid) {
-        detectedDrones.push_back(drone);
-        Serial.printf("[RemoteID] New drone detected: %s (RSSI: %d dBm)\n", 
-                     drone.uasID, drone.rssi);
-    }
+    return -1;
 }
 
 void RemoteIDDetector::parseBasicIDMessage(const uint8_t* payload, DroneRemoteIDData& drone) {
@@ -106,7 +122,6 @@ void RemoteIDDetector::parseBasicIDMessage(const uint8_t* payload, DroneRemoteID
 void RemoteIDDetector::parseLocationMessage(const uint8_t* payload, DroneRemoteIDData& drone) {
     if (payload[0] != LOCATION) return;
     
-    // ASTM F3411-22a Location Message Format
     int32_t latRaw = (payload[2] << 24) | (payload[3] << 16) | (payload[4] << 8) | payload[5];
     int32_t lonRaw = (payload[6] << 24) | (payload[7] << 16) | (payload[8] << 8) | payload[9];
     
@@ -149,50 +164,42 @@ void RemoteIDDetector::parseOperatorIDMessage(const uint8_t* payload, DroneRemot
     drone.isValid = true;
 }
 
-void RemoteIDDetector::scanWiFiBeacons() {
-    int networkCount = WiFi.scanNetworks(false, false, false, 300);
+void RemoteIDDetector::cleanupOldDetections(uint32_t timeoutMs) {
+    uint32_t currentTime = millis();
+    uint8_t writeIdx = 0;
     
-    for (int i = 0; i < networkCount; i++) {
-        String ssid = WiFi.SSID(i);
-        if (ssid.indexOf("DJI") >= 0 || ssid.indexOf("DRONE") >= 0) {
-            Serial.printf("[RemoteID] WiFi beacon detected: %s (RSSI: %d dBm)\n", 
-                         ssid.c_str(), WiFi.RSSI(i));
+    for (uint8_t i = 0; i < droneCount; i++) {
+        if ((currentTime - detectedDrones[i].lastSeen) <= timeoutMs) {
+            if (writeIdx != i) {
+                detectedDrones[writeIdx] = detectedDrones[i];
+            }
+            writeIdx++;
         }
     }
     
-    WiFi.scanDelete();
-}
-
-void RemoteIDDetector::cleanupOldDetections(uint32_t timeoutMs) {
-    uint32_t currentTime = millis();
-    detectedDrones.erase(
-        std::remove_if(detectedDrones.begin(), detectedDrones.end(),
-            [currentTime, timeoutMs](const DroneRemoteIDData& d) {
-                return (currentTime - d.lastSeen) > timeoutMs;
-            }),
-        detectedDrones.end()
-    );
+    droneCount = writeIdx;
 }
 
 uint8_t RemoteIDDetector::getDetectedDroneCount() const {
-    return detectedDrones.size();
+    return droneCount;
 }
 
 DroneRemoteIDData RemoteIDDetector::getDroneData(uint8_t index) const {
-    if (index < detectedDrones.size()) {
+    if (index < droneCount) {
         return detectedDrones[index];
     }
     return DroneRemoteIDData{};
 }
 
 void RemoteIDDetector::clearDetections() {
-    detectedDrones.clear();
+    droneCount = 0;
+    memset(detectedDrones, 0, sizeof(detectedDrones));
 }
 
 bool RemoteIDDetector::isDroneInRange(double lat, double lon, float radiusMeters) {
-    for (const auto& drone : detectedDrones) {
-        double dLat = (drone.latitude - lat) * 111320.0;
-        double dLon = (drone.longitude - lon) * 111320.0 * cos(lat * M_PI / 180.0);
+    for (uint8_t i = 0; i < droneCount; i++) {
+        double dLat = (detectedDrones[i].latitude - lat) * 111320.0;
+        double dLon = (detectedDrones[i].longitude - lon) * 111320.0 * cos(lat * M_PI / 180.0);
         double distance = sqrt(dLat * dLat + dLon * dLon);
         
         if (distance <= radiusMeters) return true;
@@ -201,7 +208,7 @@ bool RemoteIDDetector::isDroneInRange(double lat, double lon, float radiusMeters
 }
 
 void RemoteIDDetector::printDroneInfo(uint8_t index) {
-    if (index >= detectedDrones.size()) return;
+    if (index >= droneCount) return;
     
     const auto& drone = detectedDrones[index];
     Serial.println("=== Remote ID Drone Info ===");
@@ -215,3 +222,5 @@ void RemoteIDDetector::printDroneInfo(uint8_t index) {
     Serial.printf("RSSI: %d dBm, Age: %lu ms\n", 
                  drone.rssi, millis() - drone.lastSeen);
 }
+
+#endif // MODULE_REMOTE_ID

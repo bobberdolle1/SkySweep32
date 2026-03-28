@@ -1,107 +1,97 @@
 # Contributing to SkySweep32
 
-First off, thank you for considering contributing to SkySweep32! 🎉
+Thank you for your interest in contributing! SkySweep32 is an open-source project and welcomes contributions of all kinds.
 
-## Code of Conduct
+## 🚀 How to Contribute
 
-This project adheres to a code of conduct. By participating, you are expected to uphold this code.
+### 1. Bug Reports & Feature Requests
 
-## How Can I Contribute?
+- Use [GitHub Issues](https://github.com/bobberdolle1/SkySweep32/issues)
+- Include your hardware tier (Base/Standard/Pro), firmware version, and serial output
+- For bugs: describe expected vs actual behavior
 
-### Reporting Bugs
+### 2. Code Contributions
 
-Before creating bug reports, please check existing issues. When creating a bug report, include:
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make your changes following the conventions below
+4. Test on real hardware if possible
+5. Submit a Pull Request
 
-- Detailed steps to reproduce
-- Hardware configuration (ESP32 board, RF modules)
-- Software version (commit hash)
-- Serial output logs
-- Expected vs actual behavior
+### 3. Documentation
 
-### Suggesting Enhancements
+- Fix typos, improve explanations, add examples
+- Translate to new languages
+- Create tutorials or video guides
 
-Enhancement suggestions are tracked as GitHub issues. When creating an enhancement suggestion, include:
+### 4. Hardware Testing
 
-- Clear and descriptive title
-- Detailed description of the proposed functionality
-- Why this enhancement would be useful
-- Possible implementation approach
+- Test with different ESP32 variants (DevKit V1, ESP32-S3, WROOM)
+- Report range and detection accuracy
+- Share antenna comparison results
 
-### Pull Requests
+---
 
-1. Fork the repo and create your branch from `master`
-2. If you've added code, test it on actual hardware
-3. Ensure your code follows the existing style
-4. Update documentation as needed
-5. Write clear commit messages
-6. Submit a pull request
+## 📐 Code Conventions
 
-## Development Setup
+### C++
 
-```bash
-# Clone your fork
-git clone https://github.com/YOUR-USERNAME/SkySweep32.git
-cd SkySweep32
+- Use `camelCase` for variables and functions
+- Use `PascalCase` for classes
+- Use `UPPER_SNAKE_CASE` for `#define` constants
+- Include module guard: `#ifdef MODULE_*` ... `#endif`
+- Use config.h for all pin definitions and constants
+- Always use `spiManager.acquire()` / `spiManager.release()` for SPI access
 
-# Install PlatformIO
-pip install platformio
-
-# Build
-pio run
-
-# Upload to ESP32
-pio run --target upload
-```
-
-## Coding Standards
-
-- Use meaningful variable names
-- Comment complex logic
-- Follow existing code structure
-- Test on hardware before submitting
-- Keep commits atomic and well-described
-
-## Hardware Testing
-
-All code changes affecting RF modules must be tested on actual hardware:
-- ESP32 DevKit
-- CC1101 (900 MHz)
-- NRF24L01+ (2.4 GHz)
-- RX5808 (5.8 GHz)
-- OLED display
-
-## Legal Considerations
-
-⚠️ **IMPORTANT**: Contributions involving RF transmission or countermeasures must:
-
-1. Include appropriate legal warnings
-2. Be disabled by default (compile-time flag)
-3. Document regulatory requirements
-4. Not encourage illegal use
-
-## Documentation
-
-- Update README.md for user-facing changes
-- Update docs/ for technical changes
-- Maintain bilingual documentation (EN/RU)
-- Include code comments for complex logic
-
-## Commit Messages
-
-Use clear, descriptive commit messages:
+### File Structure
 
 ```
-Add CC1101 frequency hopping support
-
-- Implement channel hopping algorithm
-- Add configuration options
-- Update documentation
+src/
+├── config.h              # Central configuration
+├── config_manager.h/cpp  # Runtime JSON config
+├── spi_manager.h/cpp     # Thread-safe SPI
+├── main.cpp              # FreeRTOS task setup
+├── web_server.h/cpp      # Dashboard + API
+├── drivers/              # Hardware drivers
+│   ├── cc1101.h/cpp
+│   ├── nrf24l01.h/cpp
+│   └── rx5808.h/cpp
+├── protocols/            # Protocol parsers
+│   ├── mavlink_parser.h/cpp
+│   └── crsf_parser.h/cpp
+└── [module].h/cpp        # Feature modules
 ```
 
-## Questions?
+### Commit Messages
 
-Feel free to open an issue with the `question` label.
+Use conventional commits:
+```
+feat: add 433 MHz CC1101 support
+fix: resolve SPI bus contention on RX5808
+docs: update wiring diagram for Pro tier
+refactor: extract RSSI history to separate class
+```
 
-## License
+---
 
-By contributing, you agree that your contributions will be licensed under the GPL-3.0 License.
+## 🔬 Priority Contribution Areas
+
+1. **RF Signature Database** — Record real drone signals and share datasets
+2. **TFLite Model Training** — Train classification models on real data
+3. **ESP-NOW Mesh** — Implement multi-node communication
+4. **Web Dashboard UX** — Improve mobile responsiveness, add map view
+5. **3D Enclosure** — Design printable cases for each tier
+6. **Translations** — Add Chinese, Spanish, German docs
+7. **CI/CD** — GitHub Actions for automated builds on all tiers
+
+---
+
+## ⚖️ Legal Notice
+
+> ⚠️ **Do NOT submit code that enables illegal RF jamming or GPS spoofing without explicit authorization safeguards.** All countermeasure code must be gated behind `ENABLE_COUNTERMEASURES` and include appropriate warnings.
+
+---
+
+## 📜 License
+
+By contributing, you agree that your contributions will be licensed under the [GPL-3.0 License](LICENSE).

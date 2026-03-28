@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 #include <SPI.h>
+#include "../config.h"
+
+#ifdef MODULE_CC1101
 
 // CC1101 Register Addresses
 #define CC1101_IOCFG2       0x00
@@ -120,6 +123,29 @@ public:
     
     uint8_t getChipVersion();
     bool isConnected();
+    uint32_t getFrequency() const { return currentFrequency; }
+    
+    // --- Frequency Band Profiles ---
+    enum FreqBand {
+        BAND_433 = 0,    // 433 MHz ISM (EU/Asia)
+        BAND_868 = 1,    // 868 MHz ISM (EU)
+        BAND_915 = 2,    // 915 MHz ISM (US/AU)
+        BAND_COUNT = 3
+    };
+    
+    void setBand(FreqBand band);
+    
+    // Sweep scan: cycle through all bands, read RSSI per band
+    struct BandScanResult {
+        int8_t rssi[BAND_COUNT];
+        bool   activity[BAND_COUNT];
+    };
+    BandScanResult scanAllBands(uint16_t dwellMs = 5);
+    
+    // Spectrum scan: sweep frequency range with given step
+    void spectrumScan(uint32_t startHz, uint32_t endHz, uint32_t stepHz,
+                      int8_t* rssiOut, uint16_t maxPoints, uint16_t dwellMs = 2);
 };
 
+#endif // MODULE_CC1101
 #endif // CC1101_H

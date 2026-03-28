@@ -1,5 +1,7 @@
 #include "rx5808.h"
 
+#ifdef MODULE_RX5808
+
 RX5808Driver::RX5808Driver(uint8_t csPin, uint8_t rssiAnalogPin, SPIClass* spi) {
     chipSelectPin = csPin;
     rssiPin = rssiAnalogPin;
@@ -176,3 +178,5 @@ const char* RX5808Driver::getBandName(uint8_t band) {
         default: return "Unknown";
     }
 }
+
+#endif // MODULE_RX5808

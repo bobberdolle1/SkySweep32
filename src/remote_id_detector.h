@@ -2,13 +2,15 @@
 #define REMOTE_ID_DETECTOR_H
 
 #include <Arduino.h>
-#include <WiFi.h>
+#include "config.h"
+
+#ifdef MODULE_REMOTE_ID
+
 #include <BLEDevice.h>
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 
 // ANSI/CTA-2063 Remote ID Standard
-#define REMOTE_ID_WIFI_NAN_SERVICE "org.opendroneid.remoteid"
 #define REMOTE_ID_BLE_SERVICE_UUID "0000fffa-0000-1000-8000-00805f9b34fb"
 
 // Message Types (ASTM F3411-22a)
@@ -22,29 +24,25 @@ enum RemoteIDMessageType {
 };
 
 struct DroneRemoteIDData {
-    char uasID[21];                  // UAS Serial Number
-    uint8_t idType;                  // 0=None, 1=Serial, 2=CAA, 3=UTM
-    uint8_t uaType;                  // 0=None, 1=Aeroplane, 2=Helicopter, 3=Multirotor, etc.
+    char uasID[21];
+    uint8_t idType;
+    uint8_t uaType;
     
-    // Location data
     double latitude;
     double longitude;
-    float altitude;                  // Meters (WGS84)
-    float height;                    // Meters AGL
-    float speed;                     // m/s
-    uint16_t direction;              // Degrees (0-360)
+    float altitude;
+    float height;
+    float speed;
+    uint16_t direction;
     
-    // Operator location
     double operatorLatitude;
     double operatorLongitude;
     float operatorAltitude;
     
-    // System data
-    float areaRadius;                // Meters
+    float areaRadius;
     uint8_t areaCount;
     uint8_t classification;
     
-    // Metadata
     int8_t rssi;
     uint32_t lastSeen;
     bool isValid;
@@ -54,8 +52,10 @@ struct DroneRemoteIDData {
 class RemoteIDDetector : public BLEAdvertisedDeviceCallbacks {
 private:
     BLEScan* bleScan;
-    std::vector<DroneRemoteIDData> detectedDrones;
+    DroneRemoteIDData detectedDrones[MAX_DETECTED_DRONES];  // Fixed-size array instead of vector
+    uint8_t droneCount;
     uint32_t scanInterval;
+    uint32_t lastScanTime;
     bool isScanning;
     
     void parseBasicIDMessage(const uint8_t* payload, DroneRemoteIDData& drone);
@@ -63,11 +63,11 @@ private:
     void parseSystemMessage(const uint8_t* payload, DroneRemoteIDData& drone);
     void parseOperatorIDMessage(const uint8_t* payload, DroneRemoteIDData& drone);
     
-    void scanWiFiBeacons();
     void cleanupOldDetections(uint32_t timeoutMs);
+    int findDroneByID(const char* uasID);
 
 public:
-    RemoteIDDetector(uint32_t scanIntervalMs = 5000);
+    RemoteIDDetector(uint32_t scanIntervalMs = BLE_SCAN_INTERVAL_MS);
     
     bool begin();
     void update();
@@ -81,4 +81,5 @@ public:
     void printDroneInfo(uint8_t index);
 };
 
-#endif
+#endif // MODULE_REMOTE_ID
+#endif // REMOTE_ID_DETECTOR_H

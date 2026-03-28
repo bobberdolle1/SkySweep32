@@ -15,33 +15,44 @@
 
 ### Overview
 
-SkySweep32 is an advanced passive drone detection system based on the ESP32 microcontroller. It monitors radio spectrum across three frequency bands (900 MHz, 2.4 GHz, 5.8 GHz) to detect UAV control signals and video transmission. The system includes optional active countermeasure capabilities for authorized defense applications.
+SkySweep32 is an advanced passive drone detection system based on the ESP32 microcontroller. It monitors radio spectrum across three frequency bands (900 MHz, 2.4 GHz, 5.8 GHz) to detect UAV control signals and video transmission. **Built with a modular, budget-friendly architecture** — start with a ~$15 base kit and upgrade as needed.
+
+### 📦 Modular Tiers
+
+| Tier | Name | Cost | Includes |
+|------|------|------|----------|
+| 🟢 **Base** | Starter | ~$15-20 | ESP32 + OLED + NRF24L01+ (2.4 GHz) + Web Dashboard + BLE Remote ID |
+| 🟡 **Standard** | Hunter | ~$35-45 | Base + CC1101 (900 MHz) + RX5808 (5.8 GHz) + ML Classification |
+| 🔴 **Pro** | Sentinel | ~$60-80 | Standard + GPS + SD Card Logger + LoRa Mesh Network |
+
+**Optional add-ons**: 🎤 Acoustic Detection (~$5) | ⚔️ Countermeasures (auth required)
+
+> 📖 **[Full Modular Guide →](docs/en/modules.md)**
 
 ### Features
 
-- **Multi-band RF Scanning**: Simultaneous monitoring of 900 MHz, 2.4 GHz, and 5.8 GHz bands
-- **Acoustic Detection**: Optional Goertzel-based rotor harmonic analysis (inspired by [Batear](https://github.com/TN666/batear))
-- **Protocol Detection**: Identifies MAVLink, CRSF/ExpressLRS, DJI, and analog video signals
-- **Real-time OLED Display**: Visual feedback with signal strength bars and threat levels
-- **Threat Assessment**: 5-level classification (NONE/LOW/MEDIUM/HIGH/CRITICAL)
-- **Active Countermeasures** (optional, requires legal authorization):
-  - Wideband jamming
-  - Protocol-specific jamming
-  - Command injection (RTH/Land)
-  - Deauthentication attacks
+- **Multi-band RF & Spectrum Scanning**: Hardware sweeping across 900 MHz, 2.4 GHz, and 5.8 GHz bands checking for analog and digital drone links.
+- **Web Dashboard & Map**: Real-time dark-themed dashboard via WiFi with Leaflet.js interactive map, drone lists, and RSSI graphs.
+- **Signal Fingerprinting**: Built-in `SignalDatabase` identifying known drone patterns (e.g., DJI OcuSync, FPV Analog, Crossfire) via band-matching and RSSI variance.
+- **ESP-NOW Mesh**: Free, autonomous node-to-node network sharing threat alerts, heartbeats, and GPS telemetry across massive areas without extra hardware.
+- **Power Management**: 4 dynamic power states (Full, Balanced, Low, Deep Sleep) with battery ADC monitoring and runtime estimates.
+- **Auto-Calibration Tool**: Integrated baseline noise calibration directly from the Web-UI.
+- **Alert System**: Non-blocking intelligent Buzzer and LED patterns scaling with Threat Levels (Info → Critical).
+- **Remote ID**: FAA ANSI/CTA-2063 compliant BLE drone identification natively on the ESP32.
+- **FreeRTOS Architecture**: Safe concurrent processing with hardware Watchdogs and SPI mutexes.
 
-### Hardware Components
+### Hardware Components (Standard Tier)
 
 | Component | Model | Frequency | Purpose |
-|-----------|-------|-----------|---------|
-| Microcontroller | ESP32 DevKit | - | Main processor |
+|-----------|-------|-----------|---------| 
+| Microcontroller | ESP32 DevKit | - | Main processor + WiFi + BLE |
 | RF Module 1 | CC1101 | 900 MHz | ISM band monitoring |
 | RF Module 2 | NRF24L01+ | 2.4 GHz | WiFi/RC monitoring |
 | RF Module 3 | RX5808 | 5.8 GHz | Video link monitoring |
 | Display | OLED 128x64 (I2C) | - | Visual interface |
 | Microphone (optional) | ICS-43434 MEMS | I2S | Acoustic detection |
 
-### Pinout Configuration
+### Pinout Configuration (v0.3.0 — Conflict-Free)
 
 #### SPI Bus (Shared)
 | Signal | ESP32 Pin |
@@ -50,12 +61,14 @@ SkySweep32 is an advanced passive drone detection system based on the ESP32 micr
 | MISO   | GPIO 19   |
 | SCK    | GPIO 18   |
 
-#### Chip Select Pins (Individual)
-| Module      | CS Pin    | CE Pin (if applicable) |
-|-------------|-----------|------------------------|
-| CC1101      | GPIO 5    | -                      |
-| NRF24L01+   | GPIO 17   | GPIO 4                 |
-| RX5808      | GPIO 16   | -                      |
+#### Chip Select Pins
+| Module      | CS Pin    | CE Pin | Tier |
+|-------------|-----------|--------|------|
+| NRF24L01+   | GPIO 15   | GPIO 2 | Base+ |
+| CC1101      | GPIO 5    | -      | Standard+ |
+| RX5808      | GPIO 13   | -      | Standard+ |
+| LoRa SX1276 | GPIO 26   | -      | Pro |
+| SD Card     | GPIO 27   | -      | Pro |
 
 #### I2C Bus (OLED Display)
 | Signal | ESP32 Pin |
@@ -151,27 +164,27 @@ SkySweep32 — продвинутая система пассивного обн
 
 ### Возможности
 
-- **Мультидиапазонное сканирование**: Одновременный мониторинг 900 МГц, 2.4 ГГц и 5.8 ГГц
-- **Распознавание протоколов**: Идентификация MAVLink, CRSF/ExpressLRS, DJI и аналогового видео
-- **OLED-дисплей в реальном времени**: Визуальная индикация с графиками уровня сигнала
-- **Оценка угроз**: 5-уровневая классификация (НЕТ/НИЗКАЯ/СРЕДНЯЯ/ВЫСОКАЯ/КРИТИЧЕСКАЯ)
-- **Активное противодействие** (опционально, требуется легальная авторизация):
-  - Широкополосное глушение
-  - Целевое глушение по протоколу
-  - Инъекция команд (RTH/посадка)
-  - Deauth-атаки
+- **Мультидиапазонное и Спектральное сканирование**: Аппаратный скан эфира на 900 МГц, 2.4 ГГц и 5.8 ГГц диапазонах для детекции пультов, телеметрии и видеолинков.
+- **Web-Дашборд и Интерактивная Карта**: Локальный веб-интерфейс по WiFi с картой (Leaflet.js) для трекинга дронов и операторов через Remote ID.
+- **Сигнатурная База (Fingerprinting)**: Динамическое распознавание 8 типов дронов (DJI OcuSync, FPV, Crossfire и др.) через анализ дисперсии RSSI и паттернов "прыжков".
+- **Своя Mesh-сеть (ESP-NOW)**: Самоорганизующаяся децентрализованная сеть оповещения между детекторами (0 рублей стоимости, использует WiFi чип ESP32).
+- **Power Management (Батарея)**: Глубокий сон, скалер частоты ЦП и ADC-отслеживание батареи. Позволяет работать от 18650 днями. Автоматическая калибровка шума из UI.
+- **Умная Система Уведомлений**: Неблокирующий диспетчер сигналов для зуммера (Buzzer) и LED с динамическими паттернами под каждый уровень угрозы.
+- **Оценка угроз**: 5-уровневая классификация (НЕТ/НИЗКАЯ/СРЕДНЯЯ/ВЫСОКАЯ/КРИТИЧЕСКАЯ).
+- **Активное противодействие (опционально, требуется легальная авторизация)**.
 
-### Компоненты
+### Компоненты (Уровень Hunter)
 
 | Компонент | Модель | Частота | Назначение |
 |-----------|--------|---------|------------|
-| Микроконтроллер | ESP32 DevKit | - | Основной процессор |
+| Микроконтроллер | ESP32 DevKit | - | Основной процессор + WiFi/BLE |
 | РЧ-модуль 1 | CC1101 | 900 МГц | Мониторинг ISM-диапазона |
-| РЧ-модуль 2 | NRF24L01+ | 2.4 ГГц | Мониторинг WiFi/RC |
+| РЧ-модуль 2 | NRF24L01+ | 2.4 ГГц | Спектральное сканирование / RC |
 | РЧ-модуль 3 | RX5808 | 5.8 ГГц | Мониторинг видеолинка |
-| Дисплей | OLED 128x64 (I2C) | - | Визуальный интерфейс |
+| Дисплей | OLED 128x64 | - | Визуальный интерфейс |
+| Индикация | Passive Buzzer | - | Алерты и ошибки |
 
-### Распиновка
+### Распиновка (Бесконфликтная v0.4.0)
 
 #### Шина SPI (общая)
 | Сигнал | Пин ESP32 |
@@ -182,10 +195,12 @@ SkySweep32 — продвинутая система пассивного обн
 
 #### Пины Chip Select (индивидуальные)
 | Модуль      | CS пин    | CE пин (если есть) |
-|-------------|-----------|---------------------|
-| CC1101      | GPIO 5    | -                   |
-| NRF24L01+   | GPIO 17   | GPIO 4              |
-| RX5808      | GPIO 16   | -                   |
+|-------------|-----------|--------------------|
+| NRF24L01+   | GPIO 15   | GPIO 2             |
+| CC1101      | GPIO 5    | -                  |
+| RX5808      | GPIO 13   | -                  |
+| LoRa SX1276 | GPIO 26   | -                  |
+| SD Card     | GPIO 27   | -                  |
 
 #### Шина I2C (OLED-дисплей)
 | Сигнал | Пин ESP32 |
@@ -193,9 +208,12 @@ SkySweep32 — продвинутая система пассивного обн
 | SDA    | GPIO 21   |
 | SCL    | GPIO 22   |
 
-#### Дополнительные подключения
+#### Дополнительные подключения (Питание и Алерты)
+- **Зуммер (Buzzer)**: GPIO 4
+- **LED оповещения**: GPIO 2
+- **ADC Батареи (100k/100k)**: GPIO 36
 - **RX5808 RSSI**: GPIO 34 (ADC1_CH6)
-- **Питание**: 3.3V и GND на все модули
+- **Питание**: 3.3V и GND на все модули (регулятор LDO 1117 обязателен!)
 
 ### Архитектура ПО
 

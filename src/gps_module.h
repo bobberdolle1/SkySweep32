@@ -2,13 +2,12 @@
 #define GPS_MODULE_H
 
 #include <Arduino.h>
+#include "config.h"
+
+#ifdef MODULE_GPS
+
 #include <TinyGPSPlus.h>
 #include <HardwareSerial.h>
-
-#define GPS_BAUD_RATE 9600
-#define GPS_RX_PIN 16
-#define GPS_TX_PIN 17
-#define GPS_UPDATE_INTERVAL 1000
 
 struct GPSData {
     double latitude;
@@ -44,7 +43,7 @@ private:
     bool isInsideGeofence(const GeofenceZone& zone, double lat, double lon);
 
 public:
-    GPSModule(uint8_t rxPin = GPS_RX_PIN, uint8_t txPin = GPS_TX_PIN);
+    GPSModule(uint8_t rxPin = PIN_GPS_RX, uint8_t txPin = PIN_GPS_TX);
     
     bool begin(uint32_t baudRate = GPS_BAUD_RATE);
     void update();
@@ -63,4 +62,5 @@ public:
     void printInfo();
 };
 
-#endif
+#endif // MODULE_GPS
+#endif // GPS_MODULE_H

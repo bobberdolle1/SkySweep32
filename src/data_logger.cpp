@@ -1,12 +1,14 @@
 #include "data_logger.h"
 
+#ifdef MODULE_SD_CARD
+
 DataLogger::DataLogger() 
     : sdCardAvailable(false), logRotationSize(MAX_LOG_SIZE_MB * 1024 * 1024), 
       currentFileSize(0), minimumLogLevel(LOG_INFO) {
 }
 
 bool DataLogger::begin(uint8_t csPin) {
-    Serial.println("[DataLogger] Initializing SD card...");
+    Serial.printf("[DataLogger] Initializing SD card (CS: GPIO %d)...\n", csPin);
     
     if (!SD.begin(csPin)) {
         Serial.println("[DataLogger] SD card initialization failed");
@@ -71,14 +73,17 @@ void DataLogger::deleteOldestLog() {
             uint32_t fileTime = file.getLastWrite();
             if (fileTime < oldestTime) {
                 oldestTime = fileTime;
-                oldestFile = String(file.name());
+                // Build full path: /logs/filename
+                oldestFile = String(LOG_DIR) + "/" + String(file.name());
             }
         }
+        file.close();  // Close each file handle!
         file = root.openNextFile();
     }
+    root.close();
     
     if (oldestFile.length() > 0) {
-        SD.remove(oldestFile);
+        SD.remove(oldestFile.c_str());
         Serial.printf("[DataLogger] Deleted old log: %s\n", oldestFile.c_str());
     }
 }
@@ -91,8 +96,10 @@ uint8_t DataLogger::getLogFileCount() {
     File file = root.openNextFile();
     while (file) {
         if (!file.isDirectory()) count++;
+        file.close();  // Close each file handle!
         file = root.openNextFile();
     }
+    root.close();
     return count;
 }
 
@@ -178,6 +185,8 @@ bool DataLogger::exportToJSON(const char* outputFile, uint32_t startTime, uint32
     output.println("{\"detections\":[");
     
     File root = SD.open(LOG_DIR);
+    if (!root) { output.close(); return false; }
+    
     File file = root.openNextFile();
     bool firstEntry = true;
     
@@ -190,8 +199,10 @@ bool DataLogger::exportToJSON(const char* outputFile, uint32_t startTime, uint32
                 firstEntry = false;
             }
         }
+        file.close();
         file = root.openNextFile();
     }
+    root.close();
     
     output.println("]}");
     output.close();
@@ -208,6 +219,8 @@ bool DataLogger::exportToCSV(const char* outputFile, uint32_t startTime, uint32_
     output.println("Timestamp,Type,Module,RSSI,Frequency,Protocol,Latitude,Longitude,Altitude");
     
     File root = SD.open(LOG_DIR);
+    if (!root) { output.close(); return false; }
+    
     File file = root.openNextFile();
     
     while (file) {
@@ -217,8 +230,10 @@ bool DataLogger::exportToCSV(const char* outputFile, uint32_t startTime, uint32_
                 output.println(line);
             }
         }
+        file.close();
         file = root.openNextFile();
     }
+    root.close();
     
     output.close();
     return true;
@@ -237,14 +252,17 @@ uint32_t DataLogger::getTotalLogSize() {
     
     uint32_t totalSize = 0;
     File root = SD.open(LOG_DIR);
-    File file = root.openNextFile();
+    if (!root) return 0;
     
+    File file = root.openNextFile();
     while (file) {
         if (!file.isDirectory()) {
             totalSize += file.size();
         }
+        file.close();  // Close each file handle!
         file = root.openNextFile();
     }
+    root.close();
     
     return totalSize;
 }
@@ -256,3 +274,5 @@ bool DataLogger::isSDCardAvailable() const {
 String DataLogger::getCurrentLogFile() const {
     return currentLogFile;
 }
+
+#endif // MODULE_SD_CARD

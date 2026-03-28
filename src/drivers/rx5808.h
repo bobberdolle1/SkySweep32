@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 #include <SPI.h>
+#include "../config.h"
+
+#ifdef MODULE_RX5808
 
 // RX5808 Frequency Bands (5.8 GHz)
 #define RX5808_BAND_A   0
@@ -62,4 +65,5 @@ static const uint16_t RX5808_FREQ_TABLE[5][8] = {
     {5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917}
 };
 
+#endif // MODULE_RX5808
 #endif // RX5808_H
