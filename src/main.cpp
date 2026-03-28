@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <Wire.h>
 #include <U8g2lib.h>
+#include "countermeasures.h"
 
 // SPI Pin Definitions (ESP32 Default)
 #define SPI_MOSI 23
@@ -38,6 +39,9 @@ RFModuleData rfModules[3] = {
 };
 
 uint8_t currentModuleIndex = 0;
+
+// Countermeasure system instance
+CountermeasureSystem counterMeasures;
 
 void initializeSPI() {
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
@@ -140,9 +144,17 @@ void updateDisplay() {
         yPosition += 12;
     }
     
-    // Active module indicator
+    // Threat status indicator
+    ThreatData threat = counterMeasures.getCurrentThreat();
     display.setFont(u8g2_font_5x7_tr);
-    display.drawStr(0, 63, "Scanning...");
+    if (threat.isActive) {
+        char threatBuffer[32];
+        snprintf(threatBuffer, sizeof(threatBuffer), "THREAT: %s", 
+                 counterMeasures.getThreatLevelString(threat.level));
+        display.drawStr(0, 63, threatBuffer);
+    } else {
+        display.drawStr(0, 63, counterMeasures.isArmed() ? "ARMED - Scanning" : "Scanning...");
+    }
     
     display.sendBuffer();
 }
@@ -159,6 +171,10 @@ void setup() {
     
     pinMode(RX5808_RSSI_PIN, INPUT);
     
+    // Initialize countermeasure system
+    counterMeasures.initialize();
+    // counterMeasures.armSystem(true);  // Uncomment to enable auto-response
+    
     Serial.println("[SYSTEM] Initialization complete");
     Serial.println("[SYSTEM] Starting round-robin RSSI polling...\n");
     
@@ -174,11 +190,20 @@ void loop() {
         rfModules[i].rssiValue = readModuleRSSI(i);
         rfModules[i].isActive = (rfModules[i].rssiValue > 40); // Threshold detection
         
-        // Serial output
-        Serial.printf("[%s] RSSI: %d dBm %s\n", 
+        // Threat assessment and auto-response
+        ThreatLevel threat = counterMeasures.assessThreat(i, rfModules[i].rssiValue);
+        
+        // Serial output with threat level
+        Serial.printf("[%s] RSSI: %d dBm | Threat: %s %s\n", 
                       rfModules[i].moduleName,
                       rfModules[i].rssiValue,
+                      counterMeasures.getThreatLevelString(threat),
                       rfModules[i].isActive ? "*** SIGNAL DETECTED ***" : "");
+        
+        // Execute countermeasures if armed and threat detected
+        if (counterMeasures.isArmed() && threat >= THREAT_HIGH) {
+            counterMeasures.autoRespond(i, rfModules[i].rssiValue, rfModules[i].chipSelectPin);
+        }
         
         delay(100); // Inter-module delay
     }
