@@ -20,6 +20,7 @@ SkySweep32 is an advanced passive drone detection system based on the ESP32 micr
 ### Features
 
 - **Multi-band RF Scanning**: Simultaneous monitoring of 900 MHz, 2.4 GHz, and 5.8 GHz bands
+- **Acoustic Detection**: Optional Goertzel-based rotor harmonic analysis (inspired by [Batear](https://github.com/TN666/batear))
 - **Protocol Detection**: Identifies MAVLink, CRSF/ExpressLRS, DJI, and analog video signals
 - **Real-time OLED Display**: Visual feedback with signal strength bars and threat levels
 - **Threat Assessment**: 5-level classification (NONE/LOW/MEDIUM/HIGH/CRITICAL)
@@ -38,6 +39,7 @@ SkySweep32 is an advanced passive drone detection system based on the ESP32 micr
 | RF Module 2 | NRF24L01+ | 2.4 GHz | WiFi/RC monitoring |
 | RF Module 3 | RX5808 | 5.8 GHz | Video link monitoring |
 | Display | OLED 128x64 (I2C) | - | Visual interface |
+| Microphone (optional) | ICS-43434 MEMS | I2S | Acoustic detection |
 
 ### Pinout Configuration
 

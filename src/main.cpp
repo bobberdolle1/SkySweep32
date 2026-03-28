@@ -8,6 +8,7 @@
 #include "drivers/rx5808.h"
 #include "protocols/mavlink_parser.h"
 #include "protocols/crsf_parser.h"
+#include "acoustic_detector.h"
 
 // SPI Pin Definitions (ESP32 Default)
 #define SPI_MOSI 23
@@ -37,6 +38,13 @@ RX5808Driver rx5808(CS_RX5808, RX5808_RSSI_PIN);
 // Protocol Parsers
 MAVLinkParser mavlinkParser;
 CRSFParser crsfParser;
+
+// Acoustic Detector (optional - requires MEMS microphone)
+// Uncomment if ICS-43434 or similar I2S microphone is connected
+// #define ENABLE_ACOUSTIC_DETECTION
+#ifdef ENABLE_ACOUSTIC_DETECTION
+AcousticDetector acousticDetector(43, 44, 1); // BCLK, WS, DIN pins
+#endif
 
 // RSSI Storage
 struct RFModuleData {
@@ -194,6 +202,14 @@ void setup() {
     counterMeasures.initialize();
     // counterMeasures.armSystem(true);  // Uncomment to enable auto-response
     
+    #ifdef ENABLE_ACOUSTIC_DETECTION
+    Serial.println("\n[INIT] Initializing acoustic detector...");
+    if (!acousticDetector.begin()) {
+        Serial.println("[ERROR] Acoustic detector initialization failed");
+    }
+    // acousticDetector.calibrate(10000); // Uncomment for 10s calibration
+    #endif
+    
     Serial.println("[SYSTEM] Initialization complete");
     Serial.println("[SYSTEM] Starting round-robin RSSI polling...\n");
     
@@ -201,6 +217,15 @@ void setup() {
 }
 
 void loop() {
+    // Acoustic detection (if enabled)
+    #ifdef ENABLE_ACOUSTIC_DETECTION
+    acousticDetector.update();
+    if (acousticDetector.isDroneDetected()) {
+        Serial.printf("[ACOUSTIC] Drone detected! Ratio: %.6f\n", 
+                     acousticDetector.getCurrentRatio());
+    }
+    #endif
+    
     // Round-robin polling of all RF modules
     for (uint8_t i = 0; i < 3; i++) {
         currentModuleIndex = i;
