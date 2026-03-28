@@ -3,6 +3,11 @@
 #include <Wire.h>
 #include <U8g2lib.h>
 #include "countermeasures.h"
+#include "drivers/cc1101.h"
+#include "drivers/nrf24l01.h"
+#include "drivers/rx5808.h"
+#include "protocols/mavlink_parser.h"
+#include "protocols/crsf_parser.h"
 
 // SPI Pin Definitions (ESP32 Default)
 #define SPI_MOSI 23
@@ -23,6 +28,15 @@
 
 // OLED Display Instance (128x64, I2C)
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE, I2C_SCL, I2C_SDA);
+
+// RF Module Driver Instances
+CC1101Driver cc1101(CS_CC1101);
+NRF24L01Driver nrf24(CS_NRF24L01, 4); // CE pin = GPIO 4
+RX5808Driver rx5808(CS_RX5808, RX5808_RSSI_PIN);
+
+// Protocol Parsers
+MAVLinkParser mavlinkParser;
+CRSFParser crsfParser;
 
 // RSSI Storage
 struct RFModuleData {
@@ -92,29 +106,21 @@ int readModuleRSSI(uint8_t moduleIndex) {
     
     switch(moduleIndex) {
         case 0: // CC1101
-            selectSPIDevice(CS_CC1101);
-            // TODO: Implement CC1101 RSSI register read (0x34)
-            // rssiValue = SPI.transfer(0xF4); // Read RSSI status register
-            rssiValue = random(30, 90); // Placeholder
-            deselectAllSPIDevices();
+            rssiValue = cc1101.readRSSI();
+            rssiValue = map(rssiValue, -120, -30, 0, 100); // Convert dBm to percentage
             break;
             
         case 1: // NRF24L01+
-            selectSPIDevice(CS_NRF24L01);
-            // TODO: Implement NRF24L01+ RPD (Received Power Detector) read
-            // rssiValue = SPI.transfer(0x09); // Read RPD register
-            rssiValue = random(20, 80); // Placeholder
-            deselectAllSPIDevices();
+            rssiValue = nrf24.readRSSI();
+            rssiValue = map(rssiValue, -90, -40, 0, 100); // Convert dBm to percentage
             break;
             
         case 2: // RX5808
-            // RX5808 uses analog RSSI output
-            rssiValue = analogRead(RX5808_RSSI_PIN);
-            rssiValue = map(rssiValue, 0, 4095, 0, 100); // Convert 12-bit ADC to percentage
+            rssiValue = rx5808.readRSSI(); // Already returns percentage
             break;
     }
     
-    return rssiValue;
+    return constrain(rssiValue, 0, 100);
 }
 
 void updateDisplay() {
@@ -170,6 +176,19 @@ void setup() {
     initializeI2C();
     
     pinMode(RX5808_RSSI_PIN, INPUT);
+    pinMode(4, OUTPUT); // NRF24 CE pin
+    
+    // Initialize RF modules
+    Serial.println("\n[INIT] Initializing RF modules...");
+    if (!cc1101.begin()) {
+        Serial.println("[ERROR] CC1101 initialization failed");
+    }
+    if (!nrf24.begin()) {
+        Serial.println("[ERROR] NRF24L01+ initialization failed");
+    }
+    if (!rx5808.begin()) {
+        Serial.println("[ERROR] RX5808 initialization failed");
+    }
     
     // Initialize countermeasure system
     counterMeasures.initialize();
