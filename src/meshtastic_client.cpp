@@ -21,7 +21,7 @@ bool MeshtasticClient::begin(float frequency) {
         return false;
     }
     
-    lora->setDio0Action([]() {});
+    lora->setDio0Action([]() {}, RISING);
     
     isInitialized = true;
     Serial.printf("[LoRa] Initialized (Node: 0x%08X, Freq: %.1f MHz)\n", localNodeID, frequency);
