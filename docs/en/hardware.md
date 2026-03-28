@@ -2,18 +2,39 @@
 
 ## Bill of Materials (BOM)
 
+### Core RF Detection Modules
+
 | Component | Quantity | Specifications | Approx. Cost |
 |-----------|----------|----------------|--------------|
-| ESP32 DevKit | 1 | 240MHz dual-core, WiFi/BT | $5-10 |
+| ESP32 DevKit | 1 | 240MHz dual-core, WiFi/BT, 520KB RAM | $5-10 |
 | CC1101 Module | 1 | 300-928MHz transceiver | $3-5 |
 | NRF24L01+ Module | 1 | 2.4GHz transceiver with PA+LNA | $2-4 |
 | RX5808 Module | 1 | 5.8GHz video receiver | $3-5 |
 | OLED Display | 1 | 128x64 I2C SSD1306 | $3-5 |
-| Breadboard/PCB | 1 | For prototyping | $2-5 |
-| Jumper Wires | 20+ | Male-to-female | $2 |
-| Power Supply | 1 | 5V 2A USB or battery | $5 |
 
-**Total Cost**: ~$25-40 USD
+### New Feature Modules (6 Enhancements)
+
+| Component | Quantity | Specifications | Purpose | Approx. Cost |
+|-----------|----------|----------------|---------|--------------|
+| GPS Module NEO-6M/7M | 1 | UART, 1Hz-10Hz update rate | Geolocation tracking | $8-12 |
+| LoRa SX1276 Module | 1 | 915MHz, LoRa modulation | Meshtastic mesh | $6-10 |
+| MicroSD Card Module | 1 | SPI interface, supports up to 32GB | Data logging | $2-4 |
+| MicroSD Card | 1 | 8-32GB Class 10 | Log storage | $5-10 |
+
+### Supporting Components
+
+| Component | Quantity | Specifications | Approx. Cost |
+|-----------|----------|----------------|--------------|
+| Breadboard/PCB | 1 | For prototyping | $2-5 |
+| Jumper Wires | 40+ | Male-to-female, various lengths | $3-5 |
+| Power Supply | 1 | 5V 3A USB or LiPo 3.7V 2000mAh | $8-15 |
+| Antennas (900MHz) | 1 | 8.2cm wire or helical | $2-5 |
+| Antennas (2.4GHz) | 1 | Dipole or PCB antenna | $3-6 |
+| Antennas (5.8GHz) | 1 | Cloverleaf RHCP/LHCP | $5-10 |
+| Antennas (915MHz LoRa) | 1 | 8.6cm wire or helical | $3-6 |
+| GPS Antenna | 1 | Passive ceramic patch | $3-8 |
+
+**Total Cost**: ~$70-130 USD (with all 6 new features)
 
 ## Wiring Diagram
 
@@ -70,45 +91,129 @@ Each SPI device needs a unique CS pin:
 | 3.3V | VCC |
 | GND | GND |
 
+### 7. GPS Module (UART2)
+
+| ESP32 Pin | GPS Pin |
+|-----------|---------|
+| GPIO 16 | TX (GPS transmit) |
+| GPIO 17 | RX (GPS receive) |
+| 3.3V | VCC |
+| GND | GND |
+
+**Note**: GPS module TX connects to ESP32 RX and vice versa.
+
+### 8. MicroSD Card Module (SPI)
+
+| ESP32 Pin | SD Card Pin |
+|-----------|-------------|
+| GPIO 23 | MOSI |
+| GPIO 19 | MISO |
+| GPIO 18 | SCK |
+| GPIO 15 | CS |
+| 3.3V | VCC |
+| GND | GND |
+
+### 9. LoRa SX1276 Module (SPI)
+
+| ESP32 Pin | LoRa Pin |
+|-----------|----------|
+| GPIO 23 | MOSI |
+| GPIO 19 | MISO |
+| GPIO 18 | SCK |
+| GPIO 5 | NSS/CS |
+| GPIO 2 | DIO0 |
+| GPIO 4 | DIO1 |
+| GPIO 14 | RST |
+| 3.3V | VCC |
+| GND | GND |
+
 ## Module-Specific Notes
 
-### CC1101
+### CC1101 (900 MHz RF)
 
 - **Antenna**: Requires 868/915MHz antenna (wire length ~8.2cm for 915MHz)
 - **Power**: Draws ~15mA in RX mode, ~30mA in TX mode
 - **Voltage**: 1.8-3.6V (3.3V recommended)
+- **Range**: Up to 500m line-of-sight
 
-### NRF24L01+
+### NRF24L01+ (2.4 GHz RF)
 
 - **Antenna**: Built-in PCB antenna or external SMA
 - **Power**: PA+LNA version draws up to 115mA in TX mode
 - **Voltage**: 1.9-3.6V (3.3V recommended)
 - **Note**: Use 10µF capacitor between VCC and GND if experiencing instability
+- **Range**: Up to 1000m with PA+LNA version
 
-### RX5808
+### RX5808 (5.8 GHz Video)
 
 - **Antenna**: Requires 5.8GHz antenna (cloverleaf or patch)
 - **Power**: ~100mA typical
 - **Voltage**: 5V input (has onboard 3.3V regulator)
 - **Note**: Connect VCC to ESP32 5V pin (VIN), not 3.3V
+- **Channels**: 40 channels across 5 bands (Raceband, Fatshark, etc.)
 
-### OLED Display
+### OLED Display (I2C)
 
 - **I2C Address**: Usually 0x3C or 0x3D
 - **Power**: ~20mA
 - **Voltage**: 3.3V or 5V compatible
+- **Resolution**: 128x64 pixels monochrome
+
+### GPS Module NEO-6M/7M (UART)
+
+- **Protocol**: NMEA 0183 standard
+- **Update Rate**: 1Hz default (configurable up to 10Hz)
+- **Accuracy**: 2.5m CEP (Circular Error Probable)
+- **Cold Start**: ~27 seconds
+- **Hot Start**: ~1 second
+- **Power**: ~45mA active, ~10mA backup
+- **Voltage**: 3.3V or 5V compatible
+- **Antenna**: Requires passive ceramic patch antenna (included with most modules)
+
+### MicroSD Card Module (SPI)
+
+- **Supported Cards**: MicroSD, MicroSDHC (up to 32GB)
+- **File System**: FAT16, FAT32
+- **Power**: ~80mA during write operations
+- **Voltage**: 3.3V or 5V with level shifter
+- **Speed**: SPI mode up to 25MHz
+- **Note**: Format card as FAT32 before first use
+
+### LoRa SX1276 Module (SPI)
+
+- **Frequency**: 915MHz (US) or 868MHz (EU)
+- **Modulation**: LoRa, FSK, OOK
+- **Sensitivity**: -148dBm (SF12, 125kHz BW)
+- **Output Power**: +20dBm (100mW) maximum
+- **Range**: Up to 10km line-of-sight
+- **Power**: ~120mA TX mode, ~10mA RX mode
+- **Voltage**: 3.3V
+- **Antenna**: Requires 915MHz helical or wire antenna (8.6cm)
+- **Protocol**: Meshtastic compatible
 
 ## Power Considerations
 
-**Total Current Draw**:
-- ESP32: ~160mA (WiFi active)
+**Total Current Draw (All Features Enabled)**:
+- ESP32: ~160mA (WiFi active), ~240mA (WiFi + BLE scanning)
 - CC1101: ~30mA
 - NRF24L01+: ~115mA (TX mode)
 - RX5808: ~100mA
 - OLED: ~20mA
-- **Total**: ~425mA peak
+- GPS Module: ~45mA
+- SD Card: ~80mA (write operations)
+- LoRa SX1276: ~120mA (TX mode)
+- **Total Peak**: ~770mA (all modules transmitting simultaneously)
+- **Typical Average**: ~350-450mA (normal operation)
 
-**Recommended Power Supply**: 5V 2A USB adapter or LiPo battery with voltage regulator.
+**Recommended Power Supply**: 
+- **USB**: 5V 3A adapter (recommended for bench testing)
+- **Battery**: LiPo 3.7V 2000-3000mAh with 5V boost converter
+- **Portable**: 18650 battery holder (2S configuration) with buck converter
+
+**Battery Life Estimates** (2500mAh LiPo):
+- Continuous operation: ~5-6 hours
+- Low-power mode (GPS off, no logging): ~8-10 hours
+- Deep sleep between scans: ~24+ hours
 
 ## Antenna Recommendations
 

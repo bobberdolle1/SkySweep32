@@ -1,120 +1,248 @@
-<svg width="900" height="700" xmlns="http://www.w3.org/2000/svg">
+<svg width="1400" height="1000" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1400" height="1000" fill="#0a0e27"/>
+  
   <!-- Title -->
-  <text x="450" y="30" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#333">
-    SkySweep32 Wiring Diagram
+  <text x="700" y="40" font-family="Arial, sans-serif" font-size="28" font-weight="bold" text-anchor="middle" fill="url(#grad1)">
+    SkySweep32 Complete Wiring Diagram
+  </text>
+  <text x="700" y="70" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#aaa">
+    Multi-band Drone Detection System | 6 Feature Modules
   </text>
   
   <!-- ESP32 Board (Center) -->
-  <rect x="350" y="300" width="200" height="100" fill="#1a1a2e" stroke="#16213e" stroke-width="3" rx="5"/>
-  <text x="450" y="340" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#fff">
-    ESP32
+  <rect x="550" y="450" width="300" height="150" fill="#1a1f3a" stroke="#667eea" stroke-width="4" rx="10" filter="url(#shadow)"/>
+  <text x="700" y="500" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#fff">
+    ESP32 DevKit
   </text>
-  <text x="450" y="365" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#aaa">
-    DevKit
+  <text x="700" y="525" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#aaa">
+    240MHz Dual-Core | WiFi/BLE | 520KB RAM
+  </text>
+  <text x="700" y="545" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#4ade80">
+    SPI: MOSI(23) MISO(19) SCK(18)
+  </text>
+  <text x="700" y="565" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#fbbf24">
+    I2C: SDA(21) SCL(22)
+  </text>
+  <text x="700" y="585" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#ef4444">
+    UART2: RX(16) TX(17)
   </text>
   
-  <!-- CC1101 Module (Top Left) -->
-  <rect x="50" y="80" width="140" height="80" fill="#0f3460" stroke="#16213e" stroke-width="2" rx="5"/>
-  <text x="120" y="110" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff">
+  <!-- RF Modules Row 1 -->
+  <!-- CC1101 -->
+  <rect x="50" y="120" width="180" height="120" fill="#0f1425" stroke="#4ade80" stroke-width="3" rx="8" filter="url(#shadow)"/>
+  <text x="140" y="155" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#4ade80">
     CC1101
   </text>
-  <text x="120" y="130" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#aaa">
-    900 MHz
+  <text x="140" y="175" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#aaa">
+    900 MHz ISM
   </text>
-  <text x="120" y="145" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#e94560">
+  <text x="140" y="195" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
     CS: GPIO 5
   </text>
+  <text x="140" y="210" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    SPI Shared
+  </text>
+  <text x="140" y="225" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#667eea">
+    MAVLink/CRSF
+  </text>
   
-  <!-- NRF24L01+ Module (Top Right) -->
-  <rect x="710" y="80" width="140" height="80" fill="#0f3460" stroke="#16213e" stroke-width="2" rx="5"/>
-  <text x="780" y="110" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff">
+  <!-- NRF24L01+ -->
+  <rect x="280" y="120" width="180" height="120" fill="#0f1425" stroke="#4ade80" stroke-width="3" rx="8" filter="url(#shadow)"/>
+  <text x="370" y="155" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#4ade80">
     NRF24L01+
   </text>
-  <text x="780" y="130" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#aaa">
-    2.4 GHz
+  <text x="370" y="175" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#aaa">
+    2.4 GHz WiFi/RC
   </text>
-  <text x="780" y="145" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#e94560">
-    CS: GPIO 17
+  <text x="370" y="195" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    CS: GPIO 17 | CE: GPIO 4
+  </text>
+  <text x="370" y="210" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    SPI Shared
+  </text>
+  <text x="370" y="225" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#667eea">
+    PA+LNA 100mW
   </text>
   
-  <!-- RX5808 Module (Bottom Left) -->
-  <rect x="50" y="540" width="140" height="80" fill="#0f3460" stroke="#16213e" stroke-width="2" rx="5"/>
-  <text x="120" y="570" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff">
+  <!-- RX5808 -->
+  <rect x="510" y="120" width="180" height="120" fill="#0f1425" stroke="#4ade80" stroke-width="3" rx="8" filter="url(#shadow)"/>
+  <text x="600" y="155" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#4ade80">
     RX5808
   </text>
-  <text x="120" y="590" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#aaa">
-    5.8 GHz
+  <text x="600" y="175" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#aaa">
+    5.8 GHz Video
   </text>
-  <text x="120" y="605" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#e94560">
+  <text x="600" y="195" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
     CS: GPIO 16
   </text>
-  
-  <!-- OLED Display (Bottom Right) -->
-  <rect x="710" y="540" width="140" height="80" fill="#533483" stroke="#16213e" stroke-width="2" rx="5"/>
-  <text x="780" y="570" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff">
-    OLED
+  <text x="600" y="210" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    RSSI: GPIO 34 (ADC)
   </text>
-  <text x="780" y="590" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#aaa">
-    128x64 I2C
-  </text>
-  <text x="780" y="605" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#4ecca3">
-    SDA/SCL
+  <text x="600" y="225" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#667eea">
+    Raceband/DJI
   </text>
   
-  <!-- SPI Connections to CC1101 -->
-  <line x1="190" y1="120" x2="350" y2="320" stroke="#2196F3" stroke-width="2"/>
-  <text x="250" y="200" font-family="Arial, sans-serif" font-size="10" fill="#2196F3">MOSI (23)</text>
+  <!-- New Feature Modules Row 2 -->
+  <!-- GPS Module -->
+  <rect x="940" y="120" width="180" height="120" fill="#0f1425" stroke="#fbbf24" stroke-width="3" rx="8" filter="url(#shadow)"/>
+  <text x="1030" y="155" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#fbbf24">
+    GPS NEO-6M
+  </text>
+  <text x="1030" y="175" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#aaa">
+    Geolocation
+  </text>
+  <text x="1030" y="195" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    RX: GPIO 16 | TX: GPIO 17
+  </text>
+  <text x="1030" y="210" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    UART2 9600 baud
+  </text>
+  <text x="1030" y="225" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#667eea">
+    Geofencing
+  </text>
   
-  <line x1="190" y1="130" x2="350" y2="340" stroke="#2196F3" stroke-width="2"/>
-  <text x="250" y="220" font-family="Arial, sans-serif" font-size="10" fill="#2196F3">MISO (19)</text>
+  <!-- LoRa Module -->
+  <rect x="1170" y="120" width="180" height="120" fill="#0f1425" stroke="#fbbf24" stroke-width="3" rx="8" filter="url(#shadow)"/>
+  <text x="1260" y="155" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#fbbf24">
+    SX1276 LoRa
+  </text>
+  <text x="1260" y="175" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#aaa">
+    915 MHz Mesh
+  </text>
+  <text x="1260" y="195" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    CS: GPIO 5 | DIO0: GPIO 2
+  </text>
+  <text x="1260" y="210" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    RST: GPIO 14 | DIO1: GPIO 4
+  </text>
+  <text x="1260" y="225" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#667eea">
+    Meshtastic
+  </text>
   
-  <line x1="190" y1="140" x2="350" y2="360" stroke="#2196F3" stroke-width="2"/>
-  <text x="250" y="240" font-family="Arial, sans-serif" font-size="10" fill="#2196F3">SCK (18)</text>
+  <!-- Peripheral Modules Row 3 -->
+  <!-- OLED Display -->
+  <rect x="50" y="750" width="180" height="120" fill="#0f1425" stroke="#a78bfa" stroke-width="3" rx="8" filter="url(#shadow)"/>
+  <text x="140" y="785" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#a78bfa">
+    OLED 128x64
+  </text>
+  <text x="140" y="805" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#aaa">
+    SSD1306 I2C
+  </text>
+  <text x="140" y="825" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    SDA: GPIO 21
+  </text>
+  <text x="140" y="840" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    SCL: GPIO 22
+  </text>
+  <text x="140" y="855" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#667eea">
+    Real-time UI
+  </text>
   
-  <line x1="190" y1="150" x2="350" y2="380" stroke="#e94560" stroke-width="2" stroke-dasharray="5,5"/>
-  <text x="250" y="260" font-family="Arial, sans-serif" font-size="10" fill="#e94560">CS (5)</text>
+  <!-- SD Card -->
+  <rect x="280" y="750" width="180" height="120" fill="#0f1425" stroke="#a78bfa" stroke-width="3" rx="8" filter="url(#shadow)"/>
+  <text x="370" y="785" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#a78bfa">
+    MicroSD Card
+  </text>
+  <text x="370" y="805" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#aaa">
+    Data Logger
+  </text>
+  <text x="370" y="825" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    CS: GPIO 15
+  </text>
+  <text x="370" y="840" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    SPI Shared
+  </text>
+  <text x="370" y="855" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#667eea">
+    CSV/JSON Logs
+  </text>
   
-  <!-- SPI Connections to NRF24L01+ -->
-  <line x1="710" y1="120" x2="550" y2="320" stroke="#2196F3" stroke-width="2"/>
-  <text x="650" y="200" font-family="Arial, sans-serif" font-size="10" fill="#2196F3">MOSI (23)</text>
+  <!-- Power Supply -->
+  <rect x="1170" y="750" width="180" height="120" fill="#0f1425" stroke="#ef4444" stroke-width="3" rx="8" filter="url(#shadow)"/>
+  <text x="1260" y="785" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#ef4444">
+    Power Supply
+  </text>
+  <text x="1260" y="805" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#aaa">
+    5V 2A USB
+  </text>
+  <text x="1260" y="825" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    Total: ~425mA
+  </text>
+  <text x="1260" y="840" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#fff">
+    3.3V Regulated
+  </text>
+  <text x="1260" y="855" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#667eea">
+    LiPo Compatible
+  </text>
   
-  <line x1="710" y1="130" x2="550" y2="340" stroke="#2196F3" stroke-width="2"/>
-  <text x="650" y="220" font-family="Arial, sans-serif" font-size="10" fill="#2196F3">MISO (19)</text>
+  <!-- Connection Lines - SPI Bus (Green) -->
+  <line x1="230" y1="180" x2="550" y2="480" stroke="#4ade80" stroke-width="3"/>
+  <line x1="460" y1="180" x2="600" y2="480" stroke="#4ade80" stroke-width="3"/>
+  <line x1="690" y1="180" x2="650" y2="480" stroke="#4ade80" stroke-width="3"/>
+  <line x1="460" y1="810" x2="600" y2="600" stroke="#4ade80" stroke-width="3"/>
   
-  <line x1="710" y1="140" x2="550" y2="360" stroke="#2196F3" stroke-width="2"/>
-  <text x="650" y="240" font-family="Arial, sans-serif" font-size="10" fill="#2196F3">SCK (18)</text>
+  <!-- Connection Lines - I2C Bus (Purple) -->
+  <line x1="230" y1="810" x2="550" y2="580" stroke="#a78bfa" stroke-width="3"/>
   
-  <line x1="710" y1="150" x2="550" y2="380" stroke="#e94560" stroke-width="2" stroke-dasharray="5,5"/>
-  <text x="650" y="260" font-family="Arial, sans-serif" font-size="10" fill="#e94560">CS (17)</text>
+  <!-- Connection Lines - UART (Yellow) -->
+  <line x1="940" y1="180" x2="750" y2="480" stroke="#fbbf24" stroke-width="3"/>
   
-  <!-- SPI Connections to RX5808 -->
-  <line x1="190" y1="580" x2="350" y2="400" stroke="#2196F3" stroke-width="2"/>
-  <text x="250" y="480" font-family="Arial, sans-serif" font-size="10" fill="#2196F3">MOSI (23)</text>
+  <!-- Connection Lines - Power (Red) -->
+  <line x1="1170" y1="810" x2="850" y2="550" stroke="#ef4444" stroke-width="3" stroke-dasharray="5,5"/>
   
-  <line x1="190" y1="590" x2="360" y2="400" stroke="#2196F3" stroke-width="2"/>
-  <text x="250" y="500" font-family="Arial, sans-serif" font-size="10" fill="#2196F3">MISO (19)</text>
+  <!-- Feature Labels -->
+  <rect x="750" y="120" width="140" height="50" fill="#1a1f3a" stroke="#667eea" stroke-width="2" rx="5"/>
+  <text x="820" y="145" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#4ade80">
+    ✓ Remote ID
+  </text>
+  <text x="820" y="160" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#aaa">
+    WiFi/BLE Scan
+  </text>
   
-  <line x1="190" y1="600" x2="370" y2="400" stroke="#2196F3" stroke-width="2"/>
-  <text x="250" y="520" font-family="Arial, sans-serif" font-size="10" fill="#2196F3">SCK (18)</text>
+  <rect x="750" y="190" width="140" height="50" fill="#1a1f3a" stroke="#667eea" stroke-width="2" rx="5"/>
+  <text x="820" y="215" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#4ade80">
+    ✓ Web Dashboard
+  </text>
+  <text x="820" y="230" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#aaa">
+    192.168.4.1
+  </text>
   
-  <line x1="190" y1="610" x2="380" y2="400" stroke="#e94560" stroke-width="2" stroke-dasharray="5,5"/>
-  <text x="250" y="540" font-family="Arial, sans-serif" font-size="10" fill="#e94560">CS (16)</text>
-  
-  <!-- I2C Connections to OLED -->
-  <line x1="710" y1="580" x2="550" y2="400" stroke="#4ecca3" stroke-width="2"/>
-  <text x="650" y="480" font-family="Arial, sans-serif" font-size="10" fill="#4ecca3">SDA (21)</text>
-  
-  <line x1="710" y1="590" x2="540" y2="400" stroke="#4ecca3" stroke-width="2"/>
-  <text x="650" y="500" font-family="Arial, sans-serif" font-size="10" fill="#4ecca3">SCL (22)</text>
+  <rect x="750" y="260" width="140" height="50" fill="#1a1f3a" stroke="#667eea" stroke-width="2" rx="5"/>
+  <text x="820" y="285" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#4ade80">
+    ✓ ML Classifier
+  </text>
+  <text x="820" y="300" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#aaa">
+    TFLite Micro
+  </text>
   
   <!-- Legend -->
-  <rect x="20" y="650" width="860" height="40" fill="#f5f5f5" stroke="#ccc" stroke-width="1" rx="3"/>
-  <line x1="40" y1="670" x2="80" y2="670" stroke="#2196F3" stroke-width="3"/>
-  <text x="90" y="675" font-family="Arial, sans-serif" font-size="11" fill="#333">SPI Bus (Shared)</text>
+  <rect x="50" y="930" width="1300" height="60" fill="#1a1f3a" stroke="#667eea" stroke-width="2" rx="5"/>
+  <text x="700" y="955" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff">
+    Connection Legend
+  </text>
   
-  <line x1="240" y1="670" x2="280" y2="670" stroke="#e94560" stroke-width="3" stroke-dasharray="5,5"/>
-  <text x="290" y="675" font-family="Arial, sans-serif" font-size="11" fill="#333">Chip Select (Individual)</text>
+  <line x1="80" y1="970" x2="140" y2="970" stroke="#4ade80" stroke-width="4"/>
+  <text x="150" y="975" font-family="Arial, sans-serif" font-size="11" fill="#fff">SPI Bus (MOSI/MISO/SCK)</text>
   
-  <line x1="520" y1="670" x2="560" y2="670" stroke="#4ecca3" stroke-width="3"/>
-  <text x="570" y="675" font-family="Arial, sans-serif" font-size="11" fill="#333">I2C Bus</text>
+  <line x1="350" y1="970" x2="410" y2="970" stroke="#a78bfa" stroke-width="4"/>
+  <text x="420" y="975" font-family="Arial, sans-serif" font-size="11" fill="#fff">I2C Bus (SDA/SCL)</text>
+  
+  <line x1="600" y1="970" x2="660" y2="970" stroke="#fbbf24" stroke-width="4"/>
+  <text x="670" y="975" font-family="Arial, sans-serif" font-size="11" fill="#fff">UART (RX/TX)</text>
+  
+  <line x1="820" y1="970" x2="880" y2="970" stroke="#ef4444" stroke-width="4" stroke-dasharray="5,5"/>
+  <text x="890" y="975" font-family="Arial, sans-serif" font-size="11" fill="#fff">Power (5V/3.3V)</text>
+  
+  <line x1="1050" y1="970" x2="1110" y2="970" stroke="#667eea" stroke-width="4" stroke-dasharray="3,3"/>
+  <text x="1120" y="975" font-family="Arial, sans-serif" font-size="11" fill="#fff">Chip Select (CS)</text>
 </svg>
