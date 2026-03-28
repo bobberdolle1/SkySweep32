@@ -8,6 +8,7 @@
 
 #include <TinyGPSPlus.h>
 #include <HardwareSerial.h>
+#include <vector>
 
 struct GPSData {
     double latitude;
