@@ -7,6 +7,8 @@
 #ifdef MODULE_LORA
 
 #include <RadioLib.h>
+#include <vector>
+#include <algorithm>
 
 struct MeshPacket {
     uint32_t nodeID;
