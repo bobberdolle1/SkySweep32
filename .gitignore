@@ -1,0 +1,30 @@
+# PlatformIO
+.pio/
+.vscode/
+.clang_complete
+.gcc-flags.json
+
+# Build artifacts
+*.bin
+*.elf
+*.hex
+*.map
+
+# C/C++
+*.o
+*.a
+*.so
+*.obj
+*.exe
+*.out
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+*.code-workspace
+.idea/
