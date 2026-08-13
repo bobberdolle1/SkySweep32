@@ -2,7 +2,7 @@
 
 ## Recommendation: **NO-GO — do not fabricate Rev C.1**
 
-This is the correct conservative result. The independent review found real pre-fabrication defects, and this workstation lacks the KiCad 10 CLI, FreeCAD and C++/PlatformIO toolchains required to safely complete, electrically validate and regenerate a fabrication package. It would be unsafe to represent a renamed or hand-edited Rev C board as the requested first physical hardware.
+This is the correct conservative result. The independent review found real pre-fabrication defects, but the native Rev C.1 sources do not embody the required circuits, placement, routing, fabricator-specific impedance geometry, enclosure, or regenerated manufacturing package. It would be unsafe to represent a renamed or hand-edited Rev C board as the requested first physical hardware.
 
 ## Work completed
 
@@ -34,11 +34,11 @@ This is the correct conservative result. The independent review found real pre-f
 
 ## Verification evidence
 
-- **Passed native schematic ERC:** KiCad 10.0.5 reports zero Rev C.1 ERC violations after correcting the project footprint-library table.
+- **Passed native schematic ERC:** KiCad 10.0.5 reports zero Rev C.1 ERC violations after correcting the project footprint-library table; reconfirmed in the current worktree on 2026-08-13.
 - **Failed native PCB DRC:** KiCad 10.0.5 reports 11 violations and 7 unconnected items in the inherited/layout-incomplete board. This is recorded in `validation/NATIVE_KICAD_CHECKS.md`; no DRC-clean claim is made.
 - **Passed generated-contract check:** `python tools/development/generate_rev_c1_pinmap.py --check` accepted the Rev C.1 manifest and checked-in header. It proves only the declared GPIO/profile invariants.
 - **Passed dashboard syntax/asset check:** JavaScript extracted from `src/dashboard.html` parses with Bun; `generate_dashboard.py` regenerated the gzip include, then the PlatformIO preflight accepted it.
-- **Passed firmware build:** `pio run -e esp32s3_rev_c1_detector` completed successfully after live detection, observation logging and dashboard integration in 9.68 seconds. The compile-safe Rev C.1 profile verifies the generated pin contract and code compile together; it does not validate absent physical circuitry.
+- **Passed firmware build and host tests:** on 2026-08-13, `pio run -e esp32s3_rev_c1_detector` completed in 6.62 s and WSL-hosted ASan/UBSan tests completed with **42 passed, 0 failed**. The compile-safe profile verifies the generated pin contract and code compile together; it does not validate absent physical circuitry.
 - **No manufacturing outputs are supplied.** Copying Rev C Gerbers, positions, STEP or enclosure into Rev C.1 would be false evidence because they do not embody the needed circuit/layout changes.
 
 ## Remaining uncertainties and release blockers
