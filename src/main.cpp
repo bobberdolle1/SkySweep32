@@ -7,6 +7,8 @@
 #include "activity_classifier.h"
 #include "alert_manager.h"
 #include "config.h"
+#include "detection_model.h"
+
 #include "config_manager.h"
 #include "data_logger.h"
 #include "drivers/cc1101.h"
@@ -39,6 +41,8 @@ SX1281Driver sx1281;
 RX5808Driver rx5808(PIN_RX5808_CH1, PIN_RX5808_CH2, PIN_RX5808_CH3,
                     PIN_RX5808_RSSI);
 ActivityClassifier activityClassifier;
+DetectorFusion detectorFusion;
+
 #if defined(MODULE_REMOTE_ID) && ENABLE_EXPERIMENTAL_REMOTE_ID
 RemoteIDDetector remoteIDDetector;
 #endif
@@ -95,6 +99,22 @@ void taskRFScanning(void*) {
             receivers[receiver].rssi = readReceiverRssi(receiver);
             receivers[receiver].active = receivers[receiver].rssi > 40;
 
+            const ObservationBand evidenceBand =
+                receiver == kSubGhzReceiver
+                    ? ObservationBand::SUB_GHZ_855_925
+                    : receiver == kTwoPointFourReceiver
+                          ? ObservationBand::TWO_POINT_FOUR_GHZ
+                          : ObservationBand::FIVE_X_LOW;
+            BandObservation observation = {};
+            observation.band = evidenceBand;
+            observation.timestampMs = millis();
+            observation.centerFrequencyMHz =
+                static_cast<uint16_t>(receiverFrequencyMHz(receiver));
+            observation.normalizedLevel = receivers[receiver].rssi;
+            observation.level = DetectorFusion::levelForNormalized(observation.normalizedLevel);
+            observation.valid = true;
+            const Detection detection = detectorFusion.observe(observation);
+
             // This is relative receiver activity only. It never identifies a
             // transmitter, protocol, range, intent, or aircraft.
             const ActivityLevel activity =
@@ -121,8 +141,12 @@ void taskRFScanning(void*) {
             webServer.broadcastRFData(receivers[receiver].name, receivers[receiver].rssi,
                                       receivers[receiver].active);
             if (receivers[receiver].active) {
+                const char* evidenceType =
+                    detection.classification == DetectionClassification::RF_ACTIVITY
+                        ? "energy"
+                        : "correlated";
                 dataLogger.logRFData(receivers[receiver].name, receivers[receiver].rssi,
-                                     receiverFrequencyMHz(receiver), "energy");
+                                     receiverFrequencyMHz(receiver), evidenceType);
             }
         }
 

@@ -1,0 +1,323 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "eea4a693-4a80-47ee-908a-3c84eab7084c")
+	(paper "A4")
+	(title_block
+		(title "SkySweep32 Rev C Passive Monitor")
+		(date "2026-08-12")
+		(rev "C-PROTOTYPE")
+		(company "SkySweep32 Project")
+		(comment 1 "PASSIVE RECEIVE/ENERGY OBSERVATION ONLY")
+		(comment 2 "READY FOR FIRST PROTOTYPE / NOT PRODUCTION VALIDATED")
+		(comment 3 "Sheet 0 — System Overview")
+	)
+	(lib_symbols)
+	(text "SkySweep32 Rev C Passive Monitor"
+		(exclude_from_sim no)
+		(at 24 24 0.0000)
+		(effects
+			(font
+				(size 2.2 2.2)
+			)
+		)
+		(uuid "8f2fe368-d298-450b-b51e-c5dbf49f21b0")
+	)
+	(text "DESIGN OVERVIEW — PASSIVE RECEIVE / ENERGY OBSERVATION ONLY"
+		(exclude_from_sim no)
+		(at 24 30 0.0000)
+		(effects
+			(font
+				(size 1.5 1.5)
+			)
+		)
+		(uuid "c8925dbd-d25f-4fb9-b23f-9af2aeaace71")
+	)
+	(text "READY FOR FIRST PHYSICAL PROTOTYPE — NOT PRODUCTION VALIDATED"
+		(exclude_from_sim no)
+		(at 24 35 0.0000)
+		(effects
+			(font
+				(size 1.2 1.2)
+			)
+		)
+		(uuid "39a668cc-ea4c-4933-826b-ef43ae200a02")
+	)
+	(text "USB-C protection, charger/power path, fuel gauge, 5 V and 3.3 V rails"
+		(exclude_from_sim no)
+		(at 24 70 0.0000)
+		(effects
+			(font
+				(size 0.9 0.9)
+			)
+		)
+		(uuid "226fa216-ac9b-408a-8f5c-dccdb2808a8f")
+	)
+	(text "ESP32-S3, native USB, reset/boot/user controls, test points and alerts"
+		(exclude_from_sim no)
+		(at 114 70 0.0000)
+		(effects
+			(font
+				(size 0.9 0.9)
+			)
+		)
+		(uuid "776e2350-2eb6-40ed-bff1-f54cf2d1d337")
+	)
+	(text "E28/SX1281 and E07/CC1101 receiver modules and J5 antenna interface"
+		(exclude_from_sim no)
+		(at 24 127 0.0000)
+		(effects
+			(font
+				(size 0.9 0.9)
+			)
+		)
+		(uuid "dfd589fe-fe6d-4cbd-82b9-5613b4cd37c2")
+	)
+	(text "RX5808 selected-channel RSSI receiver and J7 antenna interface"
+		(exclude_from_sim no)
+		(at 114 127 0.0000)
+		(effects
+			(font
+				(size 0.9 0.9)
+			)
+		)
+		(uuid "13b09d12-5f77-42c6-a7b2-8d7810e61a34")
+	)
+	(text "SAM-M10Q GNSS, microSD, and keyed OLED I2C harness"
+		(exclude_from_sim no)
+		(at 69 184 0.0000)
+		(effects
+			(font
+				(size 0.9 0.9)
+			)
+		)
+		(uuid "f1c3b0dc-9708-485a-95e8-d4b59ab63a73")
+	)
+	(text "Electrical contract: named global labels are attached to reviewed numbered pins. Exact MPNs and firmware GPIO contract: hardware_manifest.json."
+		(exclude_from_sim no)
+		(at 24 205 0.0000)
+		(effects
+			(font
+				(size 1 1)
+			)
+		)
+		(uuid "2a4594fc-a992-4817-b744-685752083276")
+	)
+	(sheet
+		(at 22 48)
+		(size 70 32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "a7973572-f643-4252-b536-53bef7c316b1")
+		(property "Sheetname" "01 — USB, Battery and Power"
+			(at 22 47.2884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "01_power.kicad_sch"
+			(at 22 80.5846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project None
+				(path "/eea4a693-4a80-47ee-908a-3c84eab7084c"
+					(page "1")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 112 48)
+		(size 70 32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "f4f84a5d-0dab-4457-bc27-a7a264c49a5f")
+		(property "Sheetname" "02 — ESP32-S3 Control and Alerts"
+			(at 112 47.2884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "02_control_and_alerts.kicad_sch"
+			(at 112 80.5846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project None
+				(path "/eea4a693-4a80-47ee-908a-3c84eab7084c"
+					(page "1")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 22 105)
+		(size 70 32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "d2f0e8ec-7d1b-412e-82fe-c057f1839951")
+		(property "Sheetname" "03 — 2.4 GHz and Sub-GHz Receivers"
+			(at 22 104.2884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "03_rf_2g4_subghz.kicad_sch"
+			(at 22 137.5846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project None
+				(path "/eea4a693-4a80-47ee-908a-3c84eab7084c"
+					(page "1")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 112 105)
+		(size 70 32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "68ace72e-6f0c-4c2d-bd41-f48942448ad2")
+		(property "Sheetname" "04 — 5.8 GHz Receiver"
+			(at 112 104.2884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "04_rf_5g8.kicad_sch"
+			(at 112 137.5846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project None
+				(path "/eea4a693-4a80-47ee-908a-3c84eab7084c"
+					(page "1")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 67 162)
+		(size 70 32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "fb9a5cd6-d8ec-4c68-9cc8-93727f091e60")
+		(property "Sheetname" "05 — GNSS, Storage and Display"
+			(at 67 161.2884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "05_gnss_storage_display.kicad_sch"
+			(at 67 194.5846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project None
+				(path "/eea4a693-4a80-47ee-908a-3c84eab7084c"
+					(page "1")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)

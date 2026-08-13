@@ -14,7 +14,8 @@ CXXFLAGS  = -std=gnu++11 -Wall -Wextra -g -O1 \
             -fsanitize=address,undefined -fno-omit-frame-pointer \
             -I. -I$(SRCDIR) -I$(DRIVERDIR) -I../../src
 
-SRCS = test_parsers.cpp $(SRCDIR)/crsf_parser.cpp $(SRCDIR)/mavlink_parser.cpp
+SRCS = test_parsers.cpp $(SRCDIR)/crsf_parser.cpp $(SRCDIR)/mavlink_parser.cpp \
+       ../../src/detection_model.cpp
 BIN  = test_parsers
 
 .PHONY: all test clean

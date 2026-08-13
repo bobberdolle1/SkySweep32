@@ -1,0 +1,331 @@
+{
+  "schema_version": 1,
+  "design": {
+    "name": "SkySweep32 Detector",
+    "revision": "C.1",
+    "status": "PRE_FAB_REVIEW_NO_GO",
+    "orderable": false,
+    "canonical": false,
+    "scope": "passive_receive_and_evidence_observation_only",
+    "orderable_scope": "NO FABRICATION RELEASE: pending native CAD completion, DRC/ERC, impedance field solve, PCBA/enclosure update, and first-article plan."
+  },
+  "source_of_truth": {
+    "physical_authority": [
+      "manufacturer documentation",
+      "hardware/rev_c1/skysweep32_rev_c1.kicad_sch",
+      "hardware/rev_c1/skysweep32_rev_c1.kicad_pcb"
+    ],
+    "contract_authority": "hardware/rev_c1/hardware_manifest.json",
+    "derived": [
+      "src/generated/hardware_rev_c1.h",
+      "boards/skysweep32_rev_c1.json",
+      "hardware/rev_c1/manufacturing/*",
+      "hardware/rev_c1/validation/*"
+    ]
+  },
+  "requirements": {
+    "passive_rf": {
+      "sub_ghz": "855-925 MHz channelized RSSI/activity observation with E07-900M10S; no 433 MHz operation",
+      "two_point_four_ghz": "2400-2500 MHz RSSI/activity sweep with Ebyte E28-2G4M12SX (SX1281) plus ESP32 Wi-Fi/BLE receive functions; not protocol identity",
+      "five_point_eight_ghz": "RX5808 2012-format 12-pad module, eight hardware-selected channels (5645-5945 MHz) and analog RSSI observation; VIDEO must be connected for Rev C.1 confirmation.",
+      "remote_id": "experimental BLE/Wi-Fi receive software; no standards-conformance claim"
+    },
+    "ui": "Adafruit PID 326 SSD1306 OLED on a keyed removable 4-pin JST-SH (STEMMA QT) harness, status LED, user button, buzzer and optional vibration motor",
+    "storage": "removable microSD in exact Molex 104031-0811 socket on the shared SPI bus with independent chip select",
+    "position": "u-blox SAM-M10Q-00B GNSS module, UART NMEA and optional TIMEPULSE",
+    "networking": "ESP32 Wi-Fi dashboard and ESP-NOW only; no canonical LoRa radio",
+    "power": "USB-C or protected 1S 2500 mAh LiPo input, BQ24074 power-path charging, switched TPS61232 5 V system rail and AP63203 3.3 V rail",
+    "programming": "ESP32-S3 native USB, manual BOOT/RESET, labelled UART0/test pads",
+    "enclosure": "indoor portable two-part printed detector enclosure derived from the Rev C.1 PCBA; not sealed and not IP rated",
+    "assembly": "four-layer assembled PCB with E28, E07 and RX5808 receive modules, Rev C.1 5.x detector/video/SkyPort additions, and lid-mounted OLED harness"
+  },
+  "excluded": [
+    "LoRa radio",
+    "TinyML model inference",
+    "direction finding",
+    "unprotected or thermistor-dependent battery packs",
+    "active countermeasures or jamming outputs"
+  ],
+  "firmware": {
+    "platformio_environment": "esp32s3_rev_c1_detector",
+    "board_definition": "skysweep32_rev_c1",
+    "board_macro": "BOARD_SKYSWEEP32_REV_C1",
+    "profile_macro": "PROFILE_PASSIVE_DETECTOR",
+    "features": [
+      "MODULE_SX1281",
+      "MODULE_CC1101",
+      "MODULE_RX5808",
+      "MODULE_BATTERY_GAUGE",
+      "MODULE_OLED",
+      "MODULE_WEB_SERVER",
+      "MODULE_GPS",
+      "MODULE_SD_CARD",
+      "MODULE_ESPNOW"
+    ]
+  },
+  "mcu": {
+    "reference": "U1",
+    "manufacturer": "Espressif Systems",
+    "mpn": "ESP32-S3-WROOM-1-N16R8",
+    "flash_mb": 16,
+    "psram_mb": 8,
+    "voltage_v": 3.3,
+    "maximum_envelope_mm": [18.0, 25.5, 3.1],
+    "model_fidelity": "KICAD_STANDARD_MODEL_VERIFIED_AGAINST_DATASHEET_ENVELOPE",
+    "datasheet": "https://documentation.espressif.com/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf"
+  },
+  "signals": {
+    "I2C_SDA": {"gpio": 1, "firmware_macro": "PIN_I2C_SDA"},
+    "I2C_SCL": {"gpio": 2, "firmware_macro": "PIN_I2C_SCL"},
+    "SD_DETECT": {"gpio": 4, "firmware_macro": "PIN_SD_DETECT"},
+    "RX5808_RSSI": {"gpio": 5, "firmware_macro": "PIN_RX5808_RSSI"},
+    "RX5808_CH1": {"gpio": 6, "firmware_macro": "PIN_RX5808_CH1"},
+    "RX5808_CH2": {"gpio": 7, "firmware_macro": "PIN_RX5808_CH2"},
+    "SX1281_BUSY": {"gpio": 8, "firmware_macro": "PIN_SX1281_BUSY"},
+    "SX1281_CSN": {"gpio": 9, "firmware_macro": "PIN_SX1281_CS"},
+    "CC1101_CSN": {"gpio": 10, "firmware_macro": "PIN_CC1101_CS"},
+    "RF_SPI_MOSI": {"gpio": 11, "firmware_macro": "PIN_SPI_MOSI"},
+    "RF_SPI_SCK": {"gpio": 12, "firmware_macro": "PIN_SPI_SCK"},
+    "RF_SPI_MISO": {"gpio": 13, "firmware_macro": "PIN_SPI_MISO"},
+    "RX5808_CH3": {"gpio": 14, "firmware_macro": "PIN_RX5808_CH3"},
+    "CC1101_GDO0": {"gpio": 15, "firmware_macro": "PIN_CC1101_GDO0"},
+    "CC1101_GDO2": {"gpio": 16, "firmware_macro": "PIN_CC1101_GDO2"},
+    "SX1281_RESET": {"gpio": 17, "firmware_macro": "PIN_SX1281_RESET"},
+    "SX1281_DIO1": {"gpio": 18, "firmware_macro": "PIN_SX1281_DIO1"},
+    "GPS_PPS": {"gpio": 21, "firmware_macro": "PIN_GPS_PPS"},
+    "SD_CSN": {"gpio": 38, "firmware_macro": "PIN_SD_CS"},
+    "ALERT_BUZZER": {"gpio": 39, "firmware_macro": "PIN_BUZZER"},
+    "ALERT_LED": {"gpio": 40, "firmware_macro": "PIN_ALERT_LED"},
+    "VIBRATION": {"gpio": 41, "firmware_macro": "PIN_VIBRATION"},
+    "USER_BUTTON": {"gpio": 42, "firmware_macro": "PIN_USER_BUTTON"},
+    "GPS_RX": {"gpio": 47, "firmware_macro": "PIN_GPS_RX"},
+    "GPS_TX": {"gpio": 48, "firmware_macro": "PIN_GPS_TX"},
+    "USB_D_MINUS": {"gpio": 19, "firmware_macro": null},
+    "USB_D_PLUS": {"gpio": 20, "firmware_macro": null}
+  },
+  "reserved_gpio": {
+    "0": "BOOT button only",
+    "3": "strapping pin; no peripheral load",
+    "19": "native USB D-",
+    "20": "native USB D+",
+    "35": "internal octal PSRAM data line on ESP32-S3-WROOM-1-N16R8",
+    "36": "internal octal PSRAM data line on ESP32-S3-WROOM-1-N16R8",
+    "37": "internal octal PSRAM clock line on ESP32-S3-WROOM-1-N16R8",
+    "43": "UART0 TX test pad",
+    "44": "UART0 RX test pad",
+    "45": "strapping pin; no peripheral load",
+    "46": "strapping pin; no peripheral load"
+  },
+  "major_parts": {
+    "RF1": {
+      "manufacturer": "Chengdu Ebyte Electronic Technology",
+      "mpn": "E28-2G4M12SX",
+      "function": "2400-2500 MHz RSSI/activity sweep using SX1281",
+      "supply_v": 3.3,
+      "design_current_ma": 50,
+      "maximum_envelope_mm": [15.0, 17.8, 2.85],
+      "model_fidelity": "MECHANICAL_ENVELOPE_APPROXIMATION_FROM_EBYTE_USER_MANUAL",
+      "datasheet": "https://www.cdebyte.com/pdf-down.aspx?id=3190"
+    },
+    "RF2": {
+      "manufacturer": "Chengdu Ebyte Electronic Technology",
+      "mpn": "E07-900M10S",
+      "function": "855-925 MHz RSSI/activity observation",
+      "supply_v": 3.3,
+      "design_current_ma": 50,
+      "maximum_envelope_mm": [14.0, 20.0, 2.4],
+      "model_fidelity": "MECHANICAL_ENVELOPE_APPROXIMATION_FROM_EBYTE_DRAWING",
+      "datasheet": "https://www.cdebyte.com/pdf-down.aspx?id=1332"
+    },
+    "RF3": {
+      "manufacturer": "Multi-source legacy module",
+      "mpn": "RX5808-2012-12P",
+      "function": "5645-5945 MHz eight-channel analog RSSI observation",
+      "supply_v": 5.0,
+      "design_current_ma": 180,
+      "maximum_envelope_mm": [28.0, 23.0, 3.0],
+      "model_fidelity": "MECHANICAL_ENVELOPE_APPROXIMATION_FROM_RX5808_V1.0_2010-09-02_DRAWING",
+      "datasheet": "https://github.com/Virtex7/RX5808/blob/622e9abb79e446fcb8b7ed9257e027f564699205/Datenbl%C3%A4tter/RX5808-Spec-V1.pdf",
+      "procurement_control": "Only 12-pad 28x23x3 mm modules matching the referenced drawing; first article electrical and RSSI bench check required"
+    },
+    "GPS1": {
+      "manufacturer": "u-blox AG",
+      "mpn": "SAM-M10Q-00B",
+      "function": "detector position and time",
+      "supply_v": 3.3,
+      "design_current_ma": 100,
+      "maximum_envelope_mm": [15.9, 15.9, 6.3],
+      "model_fidelity": "MECHANICAL_ENVELOPE_APPROXIMATION_FROM_UBX-22013293",
+      "datasheet": "https://github.com/sparkfun/SparkFun_u-blox_SAM-M10Q/blob/main/Documentation/SAM-M10Q_DataSheet_UBX-22013293.pdf",
+      "integration_manual": "https://github.com/sparkfun/SparkFun_u-blox_SAM-M10Q/blob/main/Documentation/SAM-M10Q_IntegrationManual_UBX-22020019.pdf"
+    },
+    "SD1": {
+      "manufacturer": "Molex",
+      "mpn": "104031-0811",
+      "function": "microSD storage with card detect",
+      "model_fidelity": "KICAD_STANDARD_MODEL_FROM_MANUFACTURER_DRAWING"
+    },
+    "DISP1": {
+      "manufacturer": "Adafruit Industries",
+      "mpn": "PID 326",
+      "function": "lid-mounted 0.96 inch SSD1306 OLED",
+      "maximum_envelope_mm": [29.2, 26.7, 6.2],
+      "model_fidelity": "MECHANICAL_ENVELOPE_APPROXIMATION_FROM_ADAFRUIT_DRAWING",
+      "datasheet": "https://www.adafruit.com/product/326"
+    },
+    "BAT1": {
+      "manufacturer": "Adafruit Industries",
+      "mpn": "PID 328 / LP785060",
+      "function": "protected 1S 2500 mAh removable battery",
+      "nominal_voltage_v": 3.7,
+      "maximum_charge_current_ma": 1200,
+      "maximum_envelope_mm": [50.0, 60.0, 7.3],
+      "connector": "genuine JST-PH 2-pin, Adafruit polarity",
+      "model_fidelity": "MECHANICAL_ENVELOPE_APPROXIMATION_FROM_ADAFRUIT_DRAWING",
+      "datasheet": "https://cdn-shop.adafruit.com/product-files/328/LP785060+2500mAh+3.7V+20190510.pdf"
+    }
+  },
+  "assembly_items": [
+    {
+      "refs": "DISP1",
+      "qty": 1,
+      "manufacturer": "Adafruit Industries",
+      "mpn_or_standard": "PID 326",
+      "variant": "ALL",
+      "description": "0.96 inch SSD1306 OLED breakout"
+    },
+    {
+      "refs": "W1",
+      "qty": 1,
+      "manufacturer": "Adafruit Industries",
+      "mpn_or_standard": "PID 4210",
+      "variant": "ALL",
+      "description": "100 mm STEMMA QT/Qwiic JST-SH cable",
+      "cable_length_mm": 100.0
+    },
+    {
+      "refs": "BAT1",
+      "qty": 1,
+      "manufacturer": "Adafruit Industries",
+      "mpn_or_standard": "PID 328 / LP785060",
+      "variant": "ALL",
+      "description": "Protected 1S 2500 mAh LiPo with genuine JST-PH, Adafruit polarity"
+    },
+    {
+      "refs": "ANT2",
+      "qty": 1,
+      "manufacturer": "Adafruit Industries",
+      "mpn_or_standard": "PID 2308",
+      "variant": "ALL",
+      "description": "100 mm U.FL 2.4 GHz internal flex antenna for E28 onboard IPEX connector; 40 x 8 mm element",
+      "antenna_element_mm": [40.0, 8.0, 0.5],
+      "cable_length_mm": 100.0,
+      "datasheet": "https://www.adafruit.com/product/2308"
+    },
+    {
+      "refs": "ANT1",
+      "qty": 1,
+      "manufacturer": "TE Connectivity / Linx",
+      "mpn_or_standard": "ANT-868-CW-HWR-SMA",
+      "variant": "EU-868",
+      "description": "868 MHz SMA male antenna for J5"
+    },
+    {
+      "refs": "ANT1",
+      "qty": 1,
+      "manufacturer": "TE Connectivity / Linx",
+      "mpn_or_standard": "ANT-916-CW-HWR-SMA",
+      "variant": "US-915",
+      "description": "916 MHz SMA male antenna for J5"
+    },
+    {
+      "refs": "ANT3",
+      "qty": 1,
+      "manufacturer": "Taoglas",
+      "mpn_or_standard": "TG.59.0113",
+      "variant": "ALL",
+      "description": "1400-6000 MHz hinged SMA male antenna for J7/RX5808",
+      "datasheet": "https://www.digikey.com/en/products/detail/taoglas-limited/TG-59-0113/12665673"
+    },
+    {
+      "refs": "SCREW1-SCREW4",
+      "qty": 4,
+      "manufacturer": "Generic to DIN 912",
+      "mpn_or_standard": "M3x30-A2",
+      "variant": "ALL",
+      "description": "M3 x 30 socket-head screw"
+    },
+    {
+      "refs": "NUT1-NUT4",
+      "qty": 4,
+      "manufacturer": "Generic to DIN 934",
+      "mpn_or_standard": "M3-A2",
+      "variant": "ALL",
+      "description": "M3 hex nut"
+    }
+  ],
+  "power": {
+    "input_connector": "GCT USB4105-GF-A",
+    "input_requirement": "USB-C 5 V source rated at least 2 A; no USB-PD voltage negotiation",
+    "battery": "Adafruit PID 328 / LP785060 protected 1S 2500 mAh, JST-PH",
+    "charger_power_path": "Texas Instruments BQ24074RGTR, 800 mA charge, 1.3 A input limit, fixed 10k/10k TS window",
+    "fuel_gauge": "Analog Devices MAX17048G+T10",
+    "system_boost": "Texas Instruments TPS61232DRCR fixed 5 V",
+    "boost_inductor": "Bourns SRN6028C-1R0Y",
+    "fuse": "Bourns MF-MSMF200-2",
+    "vbus_tvs": "Littelfuse SMAJ5.0A",
+    "usb_esd": "STMicroelectronics USBLC6-2SC6",
+    "regulator": "Diodes Incorporated AP63203WU-7",
+    "regulator_inductor": "Bourns SRN6028-3R9M",
+    "rail_v": 3.3,
+    "rail_limit_ma": 2000,
+    "calculated_peak_ma": 1350,
+    "physical_validation_required": true
+  },
+  "mechanical": {
+    "board_datum": "lower-left board corner, top view",
+    "board_dimensions_mm": [150.0, 95.0],
+    "board_thickness_mm": 1.6,
+    "layer_count": 4,
+    "mounting_holes": [
+      [5.0, 5.0, 3.2],
+      [145.0, 5.0, 3.2],
+      [145.0, 90.0, 3.2],
+      [5.0, 90.0, 3.2]
+    ],
+    "mounting_keepout_radius_mm": 5.0,
+    "minimum_component_clearance_mm": 0.5,
+    "minimum_enclosure_clearance_mm": 1.5,
+    "battery_bay_internal_mm": [52.0, 62.0, 8.3],
+    "enclosure_parameters_mm": {
+      "pcb_edge_clearance_left_right_top": 3.0,
+      "pcb_edge_clearance_bottom": 10.0,
+      "wall_thickness": 2.5,
+      "lid_overhang": 2.2,
+      "floor_thickness": 2.5,
+      "lid_top_thickness": 3.0,
+      "battery_floor_clearance": 0.5,
+      "battery_to_board_clearance": 3.0,
+      "pcb_to_lid_internal_height": 13.2,
+      "fastener_length": 30.0,
+      "fastener_tip_recess": 0.5
+    },
+    "interface_centers_mm": {
+      "usb_c": [35.0, 91.325],
+      "microsd": [143.0, 70.0],
+      "subghz_sma": [2.55, 50.0],
+      "five8ghz_sma": [147.45, 40.64],
+      "battery_jst_ph": [18.0, 89.8],
+      "oled_jst_sh": [78.0, 89.0],
+      "oled": [60.0, 55.0],
+      "reset": [111.0, 90.0],
+      "boot": [123.0, 90.0],
+      "user": [135.0, 90.0],
+      "status_led": [106.0, 84.0],
+      "two4ghz_ipex": [136.2, 23.6],
+      "two4ghz_internal_antenna": [125.0, 15.0]
+    },
+    "battery_center_mm": [40.0, 47.5],
+    "enclosure_type": "two-part printed indoor instrument case with protected 1S battery bay"
+  }
+}

@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "SkySweep32RevC")(type "KiCad")(uri "${KIPRJMOD}/SkySweep32RevC.pretty")(options "")(descr "SkySweep32 Rev C exact-module footprints"))
+)

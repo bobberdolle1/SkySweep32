@@ -1,0 +1,7 @@
+(version 1)
+
+# The Amphenol 132289 edge-launch pads and its 50-ohm feed intentionally meet
+# Edge.Cuts. All other copper retains the board-wide 0.50 mm edge clearance.
+(rule "SMA edge-launch copper"
+    (condition "A.Reference == 'J5' || A.Reference == 'J7' || A.NetName == 'SUBGHZ_ANT' || A.NetName == 'RX5808_RF_IN'")
+    (constraint edge_clearance (min 0mm)))

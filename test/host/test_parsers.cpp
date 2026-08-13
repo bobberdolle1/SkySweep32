@@ -10,6 +10,8 @@
 #include "crsf_parser.h"
 #include "mavlink_parser.h"
 #include "activity_classifier.h"
+#include "detection_model.h"
+
 
 #include <cstdio>
 #include <cstdint>
@@ -432,12 +434,63 @@ static void testActivityClassification() {
           "value above critical remains CRITICAL");
 }
 
+static BandObservation observation(ObservationBand band, uint32_t timestampMs,
+                                   int16_t normalizedLevel, bool valid = true) {
+    BandObservation value = {};
+    value.band = band;
+    value.timestampMs = timestampMs;
+    value.normalizedLevel = normalizedLevel;
+    value.level = DetectorFusion::levelForNormalized(normalizedLevel);
+    value.valid = valid;
+    return value;
+}
+
+static void testDetectorEvidenceFusion() {
+    printf("Detector evidence fusion:\n");
+
+    DetectorFusion fusion;
+    Detection result = fusion.observe(
+        observation(ObservationBand::TWO_POINT_FOUR_GHZ, 1000, 70));
+    CHECK(result.classification == DetectionClassification::RF_ACTIVITY,
+          "single 2.4 GHz energy is RF activity, not a UAV claim");
+    CHECK(result.confidence == 35, "single-source evidence has bounded confidence");
+
+    result = fusion.observe(observation(ObservationBand::FIVE_X_LOW, 1800, 74));
+    CHECK(result.classification == DetectionClassification::DIGITAL_FPV_LIKE,
+          "correlated 2.4 GHz and 5.x energy is digital-FPV-like");
+    CHECK(result.evidence.sourceCount == 2,
+          "two contemporaneous sources are represented in evidence");
+
+    result = fusion.observe(observation(ObservationBand::ANALOG_VIDEO, 2000, 60));
+    CHECK(result.classification == DetectionClassification::ANALOG_FPV_CONFIRMED,
+          "only sync evidence can confirm analog FPV");
+    CHECK((result.evidence.flags & EVIDENCE_ANALOG_VIDEO_SYNC) != 0,
+          "analog confirmation retains its sync evidence flag");
+
+    DetectorFusion trendFusion;
+    trendFusion.observe(observation(ObservationBand::FIVE_X_HIGH, 1000, 30));
+    result = trendFusion.observe(observation(ObservationBand::FIVE_X_HIGH, 1100, 90));
+    CHECK(result.trend == SignalTrend::APPROACHING,
+          "filtered same-band rise produces approaching trend");
+
+    DetectorFusion staleFusion;
+    staleFusion.observe(observation(ObservationBand::TWO_POINT_FOUR_GHZ, 1000, 80));
+    result = staleFusion.observe(observation(ObservationBand::FIVE_X_LOW, 5001, 80));
+    CHECK(result.classification == DetectionClassification::DIGITAL_LINK_LIKE,
+          "stale 2.4 GHz observation cannot corroborate 5.x activity");
+
+    result = staleFusion.observe(observation(ObservationBand::REMOTE_ID, 5100, 70));
+    CHECK(result.classification == DetectionClassification::REMOTE_ID_CONFIRMED,
+          "explicit Remote ID evidence remains a distinct strong source");
+}
+
 int main() {
     printf("== SkySweep32 host parser tests ==\n");
     testCRSF();
     testMAVLink();
     testParseHelpers();
     testActivityClassification();
+    testDetectorEvidenceFusion();
     testFuzz();
     printf("\n%d passed, %d failed\n", g_pass, g_fail);
     return g_fail ? 1 : 0;
