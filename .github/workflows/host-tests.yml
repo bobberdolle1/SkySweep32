@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - 'src/**'
+      - 'test/**'
       - 'tools/development/verify_prototype1_security.py'
       - 'platformio.ini'
       - '.github/workflows/host-tests.yml'
