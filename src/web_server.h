@@ -46,6 +46,9 @@ public:
     
     // Data broadcast to all WebSocket clients
     void broadcastRFData(const char* moduleName, int rssi, bool active);
+    void broadcastDetection(const char* classification, const char* level,
+                            const char* trend, uint8_t confidence,
+                            uint32_t evidenceFlags);
     void broadcastDroneDetection(const char* droneID, double lat, double lon, float alt);
     void broadcastActivityLevel(const char* level, const char* source);
     void broadcastSystemStatus(const char* status);

@@ -29,6 +29,21 @@ struct DetectionLogEntry {
     float altitude;
 };
 
+// Source-normalized detector evidence. `normalizedLevel` is never dBm and
+// `confidence` is an evidence score, not a probability or protocol identity.
+struct DetectorObservationLogEntry {
+    uint32_t timestamp;
+    const char* source;
+    uint16_t centerFrequencyMHz;
+    int16_t normalizedLevel;
+    uint16_t durationMs;
+    uint16_t dutyCyclePermille;
+    const char* trend;
+    const char* classification;
+    uint32_t evidenceFlags;
+    uint8_t confidence;
+};
+
 class DataLogger {
 private:
     bool sdCardAvailable;
@@ -51,6 +66,7 @@ public:
     
     bool logDetection(const DetectionLogEntry& entry);
     bool logRFData(const char* module, int rssi, float freq, const char* protocol);
+    bool logDetectorObservation(const DetectorObservationLogEntry& entry);
     bool logDroneRemoteID(const char* uasID, double lat, double lon, float alt, int rssi);
     bool logSystemEvent(LogLevel level, const char* message);
     

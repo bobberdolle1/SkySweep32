@@ -162,6 +162,39 @@ bool DataLogger::logRFData(const char* module, int rssi, float freq, const char*
     return logDetection(entry);
 }
 
+bool DataLogger::logDetectorObservation(const DetectorObservationLogEntry& entry) {
+    if (!sdCardAvailable) return false;
+    SPIBusLock lock;
+    if (!lock) return false;
+
+    rotateLogsIfNeeded();
+    File logFile = SD.open(currentLogFile, FILE_APPEND);
+    if (!logFile) return false;
+
+    char logLine[320];
+    const int writtenCount = snprintf(
+        logLine, sizeof(logLine),
+        "[%lu] OBSERVATION | Source: %s | Level: %d normalized | Center: %u MHz | "
+        "Duration: %u ms | Duty: %u permille | Trend: %s | Classification: %s | "
+        "Evidence: 0x%08lx | Confidence: %u evidence-score\n",
+        static_cast<unsigned long>(entry.timestamp), entry.source,
+        static_cast<int>(entry.normalizedLevel),
+        static_cast<unsigned int>(entry.centerFrequencyMHz),
+        static_cast<unsigned int>(entry.durationMs),
+        static_cast<unsigned int>(entry.dutyCyclePermille), entry.trend,
+        entry.classification, static_cast<unsigned long>(entry.evidenceFlags),
+        static_cast<unsigned int>(entry.confidence));
+    if (writtenCount < 0 || static_cast<size_t>(writtenCount) >= sizeof(logLine)) {
+        logFile.close();
+        return false;
+    }
+
+    const size_t written = logFile.print(logLine);
+    currentFileSize += written;
+    logFile.close();
+    return written == static_cast<size_t>(writtenCount);
+}
+
 bool DataLogger::logDroneRemoteID(const char* uasID, double lat, double lon, float alt, int rssi) {
     if (!sdCardAvailable) return false;
     SPIBusLock lock;

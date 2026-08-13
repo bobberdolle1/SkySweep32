@@ -1,0 +1,79 @@
+** Drc report for skysweep32_rev_c1.kicad_pcb **
+** Created on 2026-08-13T18:38:09 **
+** Report includes: Errors, Warnings **
+
+** Found 11 DRC violations **
+[copper_edge_clearance]: Нарушение отступа от контура платы (ограничение настроек контура зазор 0.5000 mm; текущий 0.2496 mm)
+    Rule: ограничение настроек контура; error
+    @(48.0000 mm, 22.2500 mm): Segment on Edge.Cuts
+    @(78.7282 mm, 22.6246 mm): Track [SX1281_DIO1] on POWER_PLANE, length 8.7133 mm
+[copper_edge_clearance]: Нарушение отступа от контура платы (ограничение настроек контура зазор 0.5000 mm; текущий 0.2496 mm)
+    Rule: ограничение настроек контура; error
+    @(48.0000 mm, 22.2500 mm): Segment on Edge.Cuts
+    @(109.8485 mm, 22.6246 mm): Track [SX1281_DIO1] on POWER_PLANE, length 31.1203 mm
+[via_dangling]: Via is not connected or connected on only one layer
+    Local override; warning
+    @(51.0781 mm, 86.9219 mm): Via [GND] on F.Cu - B.Cu
+[via_dangling]: Via is not connected or connected on only one layer
+    Local override; warning
+    @(50.5000 mm, 85.0000 mm): Via [GND] on F.Cu - B.Cu
+[via_dangling]: Via is not connected or connected on only one layer
+    Local override; warning
+    @(40.1000 mm, 89.0000 mm): Via [GND] on F.Cu - B.Cu
+[via_dangling]: Via is not connected or connected on only one layer
+    Local override; warning
+    @(91.9595 mm, 76.5193 mm): Via [GND] on F.Cu - B.Cu
+[via_dangling]: Via is not connected or connected on only one layer
+    Local override; warning
+    @(22.7000 mm, 10.8750 mm): Via [GND] on F.Cu - B.Cu
+[via_dangling]: Via is not connected or connected on only one layer
+    Local override; warning
+    @(90.8250 mm, 80.1875 mm): Via [GND] on F.Cu - B.Cu
+[via_dangling]: Via is not connected or connected on only one layer
+    Local override; warning
+    @(13.3000 mm, 10.8750 mm): Via [GND] on F.Cu - B.Cu
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: ограничения настроек платы; warning
+    @(48.0000 mm, 22.2500 mm): Segment on Edge.Cuts
+    @(62.8000 mm, 16.1000 mm): Segment of U1 on F.Silkscreen
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: ограничения настроек платы; warning
+    @(48.0000 mm, 22.2500 mm): Segment on Edge.Cuts
+    @(81.2000 mm, 16.1000 mm): Segment of U1 on F.Silkscreen
+
+** Found 7 unconnected pads **
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(25.1250 mm, 22.3538 mm): Track [GND] on F.Cu, length 0.5538 mm
+    @(25.1250 mm, 13.6450 mm): Track [GND] on F.Cu, length 0.5550 mm
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(27.4334 mm, 72.4451 mm): Track [GND] on POWER_PLANE, length 2.3972 mm
+    @(26.4750 mm, 77.0000 mm): Track [GND] on F.Cu, length 9.5900 mm
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(28.8866 mm, 86.4266 mm): Track [GND] on POWER_PLANE, length 13.9815 mm
+    @(27.8250 mm, 82.0000 mm): Track [GND] on F.Cu, length 1.2099 mm
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(49.0000 mm, 85.0000 mm): Track [GND] on F.Cu, length 1.5000 mm
+    @(56.4750 mm, 86.9219 mm): Track [GND] on F.Cu, length 5.3969 mm
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(54.2686 mm, 73.2253 mm): Track [GND] on F.Cu, length 2.8547 mm
+    @(56.4750 mm, 82.0000 mm): Track [GND] on F.Cu, length 4.9219 mm
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(80.9500 mm, 82.0000 mm): Track [GND] on F.Cu, length 5.0272 mm
+    @(86.7068 mm, 76.5193 mm): Track [GND] on F.Cu, length 5.2527 mm
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.8250 mm, 80.1875 mm): Track [GND] on F.Cu, length 0.3359 mm
+    @(91.9595 mm, 76.5193 mm): Track [GND] on F.Cu, length 11.3123 mm
+
+** Found 0 Footprint errors **
+
+** Ignored checks **
+    - None
+
+** End of Report **

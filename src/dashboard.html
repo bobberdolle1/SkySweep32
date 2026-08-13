@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SkySweep32 Passive RF Monitor</title>
+<title>SkySweep32 Passive Detector</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e1a;color:#e0e6f0;min-height:100vh}
@@ -74,6 +74,13 @@ footer{text-align:center;padding:16px;color:#484f58;font-size:12px}
       </div>
     </div>
   </div>
+  <div class="card">
+    <h2>Evidence detection</h2>
+    <div class="activity-box">
+      <div class="activity-level none" id="detectionClass">NO ACTIVITY</div>
+      <div style="margin-top:12px;color:#8b949e" id="detectionBasis">Passive observations are not transmitter identity, distance, or aircraft identity.</div>
+    </div>
+  </div>
   <!-- RF activity level -->
   <div class="card">
     <h2> Уровень RF-активности</h2>
@@ -139,6 +146,25 @@ function handleMsg(d){
     el.className='activity-level '+d.level.toLowerCase();
     document.getElementById('activityBasis').textContent=d.basis||'';
     if(d.level!=='NONE')addLog('RF-активность: '+el.textContent+' ('+(d.basis||'источник не идентифицирован')+')','warn');
+  }else if(d.type==='detection'){
+    const el=document.getElementById('detectionClass');
+    const names={
+      'UNKNOWN':'NO ACTIVITY',
+      'RF_ACTIVITY':'RF ACTIVITY',
+      'RC_LINK_LIKE':'RC LINK-LIKE ACTIVITY',
+      'DIGITAL_LINK_LIKE':'DIGITAL LINK-LIKE ACTIVITY',
+      'DIGITAL_FPV_LIKE':'DIGITAL FPV / UAV-LIKE ACTIVITY',
+      'ANALOG_FPV_CONFIRMED':'ANALOG FPV CONFIRMED',
+      'REMOTE_ID_CONFIRMED':'REMOTE ID CONFIRMED'
+    };
+    el.textContent=names[d.classification]||d.classification;
+    el.className='activity-level '+({VERY_WEAK:'low',WEAK:'low',MEDIUM:'medium',STRONG:'high'}[d.level]||'none');
+    const confidence=Number.isFinite(d.confidence)?d.confidence:0;
+    const trend=d.trend||'STABLE';
+    document.getElementById('detectionBasis').textContent=
+      'Evidence score '+confidence+'/100 · '+trend+
+      ' · flags 0x'+Number(d.evidenceFlags||0).toString(16).padStart(8,'0')+
+      '. Not protocol identity, distance, or aircraft identity.';
   }else if(d.type==='status'){
     document.getElementById('uptime').textContent=formatUptime(d.uptime);
     document.getElementById('heap').textContent=(d.heap/1024).toFixed(0);

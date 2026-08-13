@@ -114,6 +114,28 @@ void taskRFScanning(void*) {
             observation.level = DetectorFusion::levelForNormalized(observation.normalizedLevel);
             observation.valid = true;
             const Detection detection = detectorFusion.observe(observation);
+            if (observation.level >= RelativeLevel::WEAK) {
+                const DetectorObservationLogEntry detectorLog = {
+                    observation.timestampMs,
+                    receivers[receiver].name,
+                    observation.centerFrequencyMHz,
+                    observation.normalizedLevel,
+                    observation.durationMs,
+                    observation.dutyCyclePermille,
+                    DetectorFusion::trendName(detection.trend),
+                    DetectorFusion::classificationName(detection.classification),
+                    detection.evidence.flags,
+                    detection.confidence,
+                };
+                dataLogger.logDetectorObservation(detectorLog);
+            }
+            webServer.broadcastDetection(
+                DetectorFusion::classificationName(detection.classification),
+                DetectorFusion::levelName(detection.level),
+                DetectorFusion::trendName(detection.trend), detection.confidence,
+                detection.evidence.flags);
+
+
 
             // This is relative receiver activity only. It never identifies a
             // transmitter, protocol, range, intent, or aircraft.

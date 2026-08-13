@@ -17,4 +17,8 @@ Reviewed plans:
 - `FIRST_ARTICLE_BRINGUP.md` — ordered bring-up/stop conditions.
 - `DIPLOMA_VALIDATION_PLAN.md` — reproducible evidence experiments.
 
+`validation/NATIVE_KICAD_CHECKS.md` records the native KiCad 10.0.5 result:
+schematic ERC passes; the inherited/layout-incomplete PCB DRC fails. The failure
+is a release blocker, not a waiver.
+
 Native CAD can become fabrication authority only after all documented blockers are designed in, independently checked in KiCad 10, and manufacturing/mechanical outputs are regenerated from that checked source.

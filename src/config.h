@@ -1,14 +1,16 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-// Canonical SkySweep32 firmware configuration. This source tree targets the
-// reviewed Rev C passive monitor only; legacy DevKit and Rev B wiring live in
-// Git history and must not be compiled for a Rev C board.
-#ifndef BOARD_SKYSWEEP32_REV_C
-#error "Build SkySweep32 with PlatformIO environment esp32s3_rev_c_passive"
-#endif
-
+// The selected PlatformIO environment defines exactly one reviewed hardware
+// contract. Rev C.1 is a pre-fabrication detector profile; its pin map is
+// intentional, but it does not claim a released or manufactured board.
+#if defined(BOARD_SKYSWEEP32_REV_C)
 #include "generated/hardware_rev_c.h"
+#elif defined(BOARD_SKYSWEEP32_REV_C1)
+#include "generated/hardware_rev_c1.h"
+#else
+#error "Build SkySweep32 with a reviewed SkySweep32 PlatformIO environment"
+#endif
 
 // The first boot generates and persists a unique WPA2 AP credential. The
 // password is intentionally never a source constant or GET API field.

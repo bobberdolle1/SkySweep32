@@ -15,7 +15,7 @@ This is the correct conservative result. The independent review found real pre-f
 3. **Detector architecture:** `DETECTOR_ARCHITECTURE.md` defines a technically bounded two-bin 5.x path: paired 6 GHz PE42427 switches, Johanson 5.150–5.875 and 5.925–6.000 GHz filters, AD8318 log detector and ADS1115. RX5808 remains the analog-video receiver. This produces coarse activity/temporal evidence, not a spectrum analyzer, video decoder, brand ID or distance meter.
 4. **Analog-video plan:** buffered, 75 Ω source-terminated VIDEO OUT plus LM1881 composite sync output. Firmware rule: only a stable 500 ms sync train with current-channel energy may emit `ANALOG_FPV_CONFIRMED`.
 5. **Expansion contract:** `SKYPORT.md` defines a keyed JST-GH 16-pin interface, 5 V/3.3 V 100 mA limits, protected sequencing, I²C/SPI/UART/GPIO, EEPROM descriptor and passive-only discovery contract.
-6. **Evidence-fusion implementation:** added `src/detection_model.h/.cpp`, host test cases and live scan-loop integration. The fixed-storage model publishes `BandObservation`, `SignalFeatures`, `DetectionEvidence` and `Detection`, confines classifications to the allowed early set, records flags/confidence/trend and has no brand-specific classification. Existing logs distinguish uncorrelated `energy` from `correlated` evidence; a Rev C.1 raw-record schema remains a release blocker.
+6. **Evidence-fusion implementation:** added `src/detection_model.h/.cpp`, host test cases, live scan-loop integration, reproducible observation logging and live dashboard evidence states. The fixed-storage model publishes `BandObservation`, `SignalFeatures`, `DetectionEvidence` and `Detection`, confines classifications to the allowed early set, records flags/confidence/trend and has no brand-specific classification. The SD observation record preserves source-normalized level, frequency bin, timing, trend, classification, flags and evidence score; it never labels that level dBm or confidence a probability. Existing logs distinguish uncorrelated `energy` from `correlated` evidence.
 7. **Power, cost and validation plans:** documented in `POWER_BUDGET.md`, `PROCUREMENT_AND_COST.md`, `FIRST_ARTICLE_BRINGUP.md` and `DIPLOMA_VALIDATION_PLAN.md`.
 
 ## Required changes relative to Rev C
@@ -34,9 +34,11 @@ This is the correct conservative result. The independent review found real pre-f
 
 ## Verification evidence
 
-- **Passed static checks:** Rev C.1 manifest parses as JSON. Parenthesis balance is zero for its PCB and all five schematic files. New detector model contains the fusion contract and no brand labels.
-- **Passed firmware build:** `pio run -e esp32s3_rev_c_passive` completed successfully after scan-loop integration in 9.72 seconds (a preceding full build completed in 33.70 seconds). It compiles the changed detector model and its caller with the existing Rev C passive target; it does not validate an unimplemented Rev C.1 pin contract or hardware.
-- **Not run / unavailable:** KiCad ERC/DRC/parity/exports, Gerber/drill/BOM/CPL/PDF/STEP/enclosure generation, USB field solve/coupon, host ASan/UBSan test binary and cppcheck. `kicad-cli`, `FreeCADCmd`, `make`, `g++`, `clang++` and `cppcheck` are absent on this workstation.
+- **Passed native schematic ERC:** KiCad 10.0.5 reports zero Rev C.1 ERC violations after correcting the project footprint-library table.
+- **Failed native PCB DRC:** KiCad 10.0.5 reports 11 violations and 7 unconnected items in the inherited/layout-incomplete board. This is recorded in `validation/NATIVE_KICAD_CHECKS.md`; no DRC-clean claim is made.
+- **Passed generated-contract check:** `python tools/development/generate_rev_c1_pinmap.py --check` accepted the Rev C.1 manifest and checked-in header. It proves only the declared GPIO/profile invariants.
+- **Passed dashboard syntax/asset check:** JavaScript extracted from `src/dashboard.html` parses with Bun; `generate_dashboard.py` regenerated the gzip include, then the PlatformIO preflight accepted it.
+- **Passed firmware build:** `pio run -e esp32s3_rev_c1_detector` completed successfully after live detection, observation logging and dashboard integration in 9.68 seconds. The compile-safe Rev C.1 profile verifies the generated pin contract and code compile together; it does not validate absent physical circuitry.
 - **No manufacturing outputs are supplied.** Copying Rev C Gerbers, positions, STEP or enclosure into Rev C.1 would be false evidence because they do not embody the needed circuit/layout changes.
 
 ## Remaining uncertainties and release blockers

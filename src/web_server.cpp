@@ -361,6 +361,24 @@ void SkySweepWebServer::broadcastRFData(const char* moduleName, int rssi, bool a
     webSocket->textAll(output);
 }
 
+void SkySweepWebServer::broadcastDetection(const char* classification, const char* level,
+                                           const char* trend, uint8_t confidence,
+                                           uint32_t evidenceFlags) {
+    if (!isRunning || !webSocket || webSocket->count() == 0) return;
+
+    JsonDocument doc;
+    doc["type"] = "detection";
+    doc["classification"] = classification;
+    doc["level"] = level;
+    doc["trend"] = trend;
+    doc["confidence"] = confidence;
+    doc["evidenceFlags"] = evidenceFlags;
+
+    String output;
+    serializeJson(doc, output);
+    webSocket->textAll(output);
+}
+
 void SkySweepWebServer::broadcastDroneDetection(const char* droneID, double lat, double lon, float alt) {
     if (!isRunning || !webSocket || webSocket->count() == 0) return;
     
