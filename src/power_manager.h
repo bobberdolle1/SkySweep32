@@ -3,16 +3,13 @@
 
 #include <Arduino.h>
 #include "config.h"
-#include <esp_sleep.h>
 #include <esp_pm.h>
 #include <driver/adc.h>
 
-// Power modes
+// Only modes with executed behavior are exposed by Prototype #1.
 enum PowerMode {
-    POWER_FULL = 0,       // All modules active, max scan rate
-    POWER_BALANCED = 1,   // Reduced scan rate, WiFi power save
-    POWER_LOW = 2,        // Minimal scanning, OLED off
-    POWER_SLEEP = 3       // Deep sleep between scan cycles
+    POWER_FULL = 0,       // 240 MHz CPU, Wi-Fi power save disabled
+    POWER_BALANCED = 1    // 160 MHz CPU, Wi-Fi modem power save enabled
 };
 
 // Battery monitoring (optional single-cell input through a 100k/100k divider).
@@ -31,9 +28,6 @@ private:
     bool batteryMonitoring;
     uint32_t lastBatteryRead;
     
-    // Deep sleep configuration
-    uint64_t sleepDurationUs;     // Microseconds between wake cycles (64-bit: >71 min would overflow uint32)
-    uint8_t  wakeScansBeforeSleep; // Number of scans before going back to sleep
     
 public:
     PowerManager();
@@ -52,18 +46,9 @@ public:
     bool isBatteryLow();  // < 15%
     bool isBatteryCritical(); // < 5%
     
-    // Deep sleep
-    void configureSleep(uint32_t sleepSeconds, uint8_t scansPerWake = 3);
-    void enterDeepSleep();
-    void enterLightSleep(uint32_t durationMs);
-    bool isWakeFromSleep();
-    
-    // CPU frequency scaling
-    void setCPUFrequency(uint32_t mhz);  // 80, 160, or 240 MHz
-    
-    // Peripheral power control
-    void disableBluetoothPower();
-    void enableBluetoothPower();
+    // CPU and Wi-Fi policy
+    void setCPUFrequency(uint32_t mhz);  // 160 or 240 MHz
+    void applyWiFiPolicy();
     void setWiFiPowerSave(bool enable);
     
     // Power stats for dashboard

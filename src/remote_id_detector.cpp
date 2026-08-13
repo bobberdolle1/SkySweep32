@@ -1,6 +1,6 @@
 #include "remote_id_detector.h"
 
-#ifdef MODULE_REMOTE_ID
+#if defined(MODULE_REMOTE_ID) && ENABLE_EXPERIMENTAL_REMOTE_ID
 
 #include <cmath>
 
@@ -229,4 +229,4 @@ void RemoteIDDetector::printDroneInfo(uint8_t index) {
                  drone.rssi, millis() - drone.lastSeen);
 }
 
-#endif // MODULE_REMOTE_ID
+#endif // MODULE_REMOTE_ID && ENABLE_EXPERIMENTAL_REMOTE_ID

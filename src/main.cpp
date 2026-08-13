@@ -39,7 +39,9 @@ SX1281Driver sx1281;
 RX5808Driver rx5808(PIN_RX5808_CH1, PIN_RX5808_CH2, PIN_RX5808_CH3,
                     PIN_RX5808_RSSI);
 ActivityClassifier activityClassifier;
+#if defined(MODULE_REMOTE_ID) && ENABLE_EXPERIMENTAL_REMOTE_ID
 RemoteIDDetector remoteIDDetector;
+#endif
 SkySweepWebServer webServer;
 DataLogger dataLogger;
 GPSModule gpsModule;
@@ -206,6 +208,7 @@ void taskWebServer(void*) {
     }
 }
 
+#if defined(MODULE_REMOTE_ID) && ENABLE_EXPERIMENTAL_REMOTE_ID
 void taskRemoteID(void*) {
     Serial.println("[TASK] Experimental Remote ID scanning started");
     for (;;) {
@@ -224,6 +227,7 @@ void taskRemoteID(void*) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
+#endif
 
 void taskGPS(void*) {
     Serial.println("[TASK] GNSS polling started");
@@ -236,6 +240,19 @@ void taskGPS(void*) {
 void beginReceiver(const char* name, bool initialized) {
     Serial.printf("[INIT] %s: %s\n", name, initialized ? "ready" : "failed");
 }
+void showInitialNetworkCredentials() {
+    if (!configManager.networkCredentialsWereGenerated()) return;
+    const RuntimeConfig& network = configManager.get();
+    display.clearBuffer();
+    display.setFont(u8g2_font_5x7_tr);
+    display.drawStr(0, 10, "New AP credentials");
+    display.drawStr(0, 25, network.wifiSSID);
+    display.drawStr(0, 40, network.wifiPassword);
+    display.drawStr(0, 55, "Serial has a copy");
+    display.sendBuffer();
+    delay(5000);
+}
+
 
 }  // namespace
 
@@ -246,7 +263,7 @@ void setup() {
                   SKYSWEEP_BUILD_DATE);
     Serial.println("Relative RF energy/activity observation only; no transmitter identity.");
 
-    configManager.begin();
+    const bool configReady = configManager.begin();
     esp_task_wdt_init(30, true);
     esp_task_wdt_add(nullptr);
 
@@ -260,7 +277,7 @@ void setup() {
     display.drawStr(0, 10, "SkySweep32");
     display.drawStr(0, 25, "Initializing...");
     display.sendBuffer();
-
+    showInitialNetworkCredentials();
     if (spiManager.acquire(pdMS_TO_TICKS(1000))) {
         beginReceiver("CC1101 855-925 MHz", cc1101.begin());
         spiManager.release();
@@ -272,13 +289,17 @@ void setup() {
     beginReceiver("RX5808 5.8 GHz", rx5808.begin());
 
     alertManager.begin(true, true);
-    if (webServer.begin(true)) {
+    if (configReady && webServer.begin()) {
         Serial.printf("[WEB] %s\n", webServer.getIPAddress().toString().c_str());
+    } else if (!configReady) {
+        Serial.println("[INIT] Web server disabled: configuration storage unavailable");
     } else {
         Serial.println("[INIT] Web server failed");
     }
     if (!espNowMesh.begin()) Serial.println("[INIT] ESP-NOW failed");
+#if defined(MODULE_REMOTE_ID) && ENABLE_EXPERIMENTAL_REMOTE_ID
     if (!remoteIDDetector.begin()) Serial.println("[INIT] Experimental Remote ID failed");
+#endif
     if (!dataLogger.begin(PIN_SD_CS)) Serial.println("[INIT] microSD unavailable");
     if (!gpsModule.begin()) Serial.println("[INIT] GNSS unavailable");
 
@@ -288,8 +309,10 @@ void setup() {
                             TASK_PRIORITY_DISPLAY, &displayTask, 1);
     xTaskCreatePinnedToCore(taskWebServer, "Web", TASK_STACK_WEBSERVER, nullptr,
                             TASK_PRIORITY_WEBSERVER, &webTask, 1);
+#if defined(MODULE_REMOTE_ID) && ENABLE_EXPERIMENTAL_REMOTE_ID
     xTaskCreatePinnedToCore(taskRemoteID, "RemoteID", TASK_STACK_REMOTE_ID, nullptr,
                             TASK_PRIORITY_REMOTE_ID, nullptr, 0);
+#endif
     xTaskCreatePinnedToCore(taskGPS, "GNSS", TASK_STACK_GPS, nullptr,
                             TASK_PRIORITY_GPS, &gpsTask, 1);
 

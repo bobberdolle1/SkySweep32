@@ -10,12 +10,11 @@
 
 // Runtime-configurable settings (stored in SPIFFS)
 struct RuntimeConfig {
-    // WiFi
+    // AP network and its management credential. Rev C intentionally supports
+    // AP mode only until STA behavior has physical bring-up evidence.
     char wifiSSID[32];
     char wifiPassword[64];
-    bool wifiAPMode;
     uint8_t wifiChannel;
-    
     // RSSI thresholds (override config.h defaults)
     uint8_t rssiThresholdLow;
     uint8_t rssiThresholdMedium;
@@ -43,8 +42,11 @@ class ConfigManager {
 private:
     RuntimeConfig cfg;
     bool spiffsReady;
-    
+    bool networkCredentialsGenerated;
+
     void setDefaults();
+    void generateNetworkCredentials();
+    bool validateNetworkConfig(const RuntimeConfig& candidate) const;
 
 public:
     ConfigManager();
@@ -53,12 +55,13 @@ public:
     bool load();
     bool save();
     bool reset();
-    
+
     RuntimeConfig& get() { return cfg; }
     const RuntimeConfig& get() const { return cfg; }
-    
+    bool networkCredentialsWereGenerated() const { return networkCredentialsGenerated; }
+
     // Convenience setters with auto-save
-    bool setWifi(const char* ssid, const char* password, bool apMode);
+    bool setWifi(const char* ssid, const char* password, uint8_t channel);
     bool setThresholds(uint8_t low, uint8_t med, uint8_t high, uint8_t crit);
     bool setScanInterval(uint32_t rfMs);
     

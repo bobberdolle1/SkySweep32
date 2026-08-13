@@ -95,7 +95,6 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         "MODULE_BATTERY_GAUGE",
         "MODULE_OLED",
         "MODULE_WEB_SERVER",
-        "MODULE_REMOTE_ID",
         "MODULE_GPS",
         "MODULE_SD_CARD",
         "MODULE_ESPNOW",

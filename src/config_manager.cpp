@@ -1,174 +1,183 @@
 #include "config_manager.h"
 
-// Global instance
+#include <esp_system.h>
+
 ConfigManager configManager;
 
-ConfigManager::ConfigManager() : spiffsReady(false) {
+namespace {
+constexpr char kCredentialAlphabet[] =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+constexpr size_t kApPasswordLength = 16;
+constexpr char kRetiredPublicSsid[] = "SkySweep32";
+
+bool copyBounded(char* destination, size_t destinationSize, const char* source) {
+    if (!source || strnlen(source, destinationSize) >= destinationSize) return false;
+    strlcpy(destination, source, destinationSize);
+    return true;
+}
+}  // namespace
+
+
+ConfigManager::ConfigManager() : spiffsReady(false), networkCredentialsGenerated(false) {
     setDefaults();
 }
 
 void ConfigManager::setDefaults() {
-    // WiFi defaults from config.h
-    strncpy(cfg.wifiSSID, WIFI_AP_SSID, sizeof(cfg.wifiSSID));
-    strncpy(cfg.wifiPassword, WIFI_AP_PASSWORD, sizeof(cfg.wifiPassword));
-    cfg.wifiAPMode = true;
+    cfg.wifiSSID[0] = '\0';
+    cfg.wifiPassword[0] = '\0';
     cfg.wifiChannel = WIFI_AP_CHANNEL;
-    
-    // RSSI thresholds from config.h
     cfg.rssiThresholdLow = RSSI_THRESHOLD_LOW;
     cfg.rssiThresholdMedium = RSSI_THRESHOLD_MEDIUM;
     cfg.rssiThresholdHigh = RSSI_THRESHOLD_HIGH;
     cfg.rssiThresholdCritical = RSSI_THRESHOLD_CRITICAL;
-    
-    // Scan intervals
     cfg.rfScanIntervalMs = RF_SCAN_INTERVAL_MS;
     cfg.displayUpdateMs = DISPLAY_UPDATE_INTERVAL_MS;
     cfg.bleScanIntervalMs = BLE_SCAN_INTERVAL_MS;
-    
-    
-    // GPS
     cfg.gpsUpdateIntervalMs = GPS_UPDATE_INTERVAL;
-    
-    // Logging
-    cfg.logLevel = 1;  // INFO
+    cfg.logLevel = 1;
     cfg.maxLogSizeMB = MAX_LOG_SIZE_MB;
-    
-    // Stealth
     cfg.stealthMode = false;
 }
 
+void ConfigManager::generateNetworkCredentials() {
+    const uint64_t mac = ESP.getEfuseMac();
+    snprintf(cfg.wifiSSID, sizeof(cfg.wifiSSID), "%s-%04llX", WIFI_AP_SSID_PREFIX,
+             static_cast<unsigned long long>(mac & 0xffffULL));
+    for (size_t index = 0; index < kApPasswordLength; ++index) {
+        cfg.wifiPassword[index] =
+            kCredentialAlphabet[esp_random() % (sizeof(kCredentialAlphabet) - 1)];
+    }
+    cfg.wifiPassword[kApPasswordLength] = '\0';
+    networkCredentialsGenerated = true;
+}
+
+bool ConfigManager::validateNetworkConfig(const RuntimeConfig& candidate) const {
+    const size_t ssidLength = strnlen(candidate.wifiSSID, sizeof(candidate.wifiSSID));
+    const size_t passwordLength =
+        strnlen(candidate.wifiPassword, sizeof(candidate.wifiPassword));
+    return ssidLength >= 1 && ssidLength < sizeof(candidate.wifiSSID) &&
+           passwordLength >= 8 && passwordLength < sizeof(candidate.wifiPassword) &&
+           candidate.wifiChannel >= 1 && candidate.wifiChannel <= 13;
+}
+
 bool ConfigManager::begin() {
-    if (!SPIFFS.begin(true)) {  // true = format on fail
+    if (!SPIFFS.begin(true)) {
         Serial.println("[CONFIG] SPIFFS mount failed");
         spiffsReady = false;
         return false;
     }
-    
+
     spiffsReady = true;
     Serial.printf("[CONFIG] SPIFFS: %u KB used / %u KB total\n",
                   SPIFFS.usedBytes() / 1024, SPIFFS.totalBytes() / 1024);
-    
-    // Try to load existing config
-    if (SPIFFS.exists(CONFIG_FILE)) {
-        if (load()) {
-            Serial.println("[CONFIG] Loaded saved configuration");
-            return true;
-        }
-        Serial.println("[CONFIG] Failed to parse config, using defaults");
-    } else {
-        Serial.println("[CONFIG] No saved config, using defaults");
-        save();  // Save defaults so file exists
+    if (SPIFFS.exists(CONFIG_FILE) && load()) {
+        Serial.println("[CONFIG] Loaded saved configuration");
+        return true;
     }
-    
+
+    setDefaults();
+    generateNetworkCredentials();
+    if (!save()) return false;
+    Serial.println("[CONFIG] Generated first-boot AP credentials");
+    Serial.printf("[CONFIG] AP SSID: %s\n", cfg.wifiSSID);
+    Serial.printf("[CONFIG] AP password: %s\n", cfg.wifiPassword);
     return true;
 }
 
 bool ConfigManager::load() {
     if (!spiffsReady) return false;
-    
     File file = SPIFFS.open(CONFIG_FILE, "r");
-    if (!file) {
-        Serial.println("[CONFIG] Cannot open config file");
-        return false;
-    }
-    
+    if (!file) return false;
+
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, file);
+    const DeserializationError error = deserializeJson(doc, file);
     file.close();
-    
-    if (error) {
-        Serial.printf("[CONFIG] Parse error: %s\n", error.c_str());
+    if (error || !doc.is<JsonObject>()) return false;
+
+    RuntimeConfig loaded = cfg;
+    const JsonVariantConst wifi = doc["wifi"];
+    if (!wifi.is<JsonObject>()) return false;
+    const JsonObjectConst wifiObject = wifi.as<JsonObjectConst>();
+    const JsonVariantConst ssid = wifiObject["ssid"];
+    const JsonVariantConst password = wifiObject["password"];
+    const JsonVariantConst channel = wifiObject["channel"];
+    if (!ssid.is<const char*>() || !password.is<const char*>() || !channel.is<int>()) {
         return false;
     }
-    
-    // WiFi
-    if (doc["wifi"]["ssid"]) strlcpy(cfg.wifiSSID, doc["wifi"]["ssid"], sizeof(cfg.wifiSSID));
-    if (doc["wifi"]["password"]) strlcpy(cfg.wifiPassword, doc["wifi"]["password"], sizeof(cfg.wifiPassword));
-    if (!doc["wifi"]["apMode"].isNull()) cfg.wifiAPMode = doc["wifi"]["apMode"];
-    if (!doc["wifi"]["channel"].isNull()) cfg.wifiChannel = doc["wifi"]["channel"];
-    
-    // RSSI thresholds
-    if (!doc["thresholds"]["low"].isNull()) cfg.rssiThresholdLow = doc["thresholds"]["low"];
-    if (!doc["thresholds"]["medium"].isNull()) cfg.rssiThresholdMedium = doc["thresholds"]["medium"];
-    if (!doc["thresholds"]["high"].isNull()) cfg.rssiThresholdHigh = doc["thresholds"]["high"];
-    if (!doc["thresholds"]["critical"].isNull()) cfg.rssiThresholdCritical = doc["thresholds"]["critical"];
-    
-    // Scan intervals
-    if (!doc["rfScanMs"].isNull()) cfg.rfScanIntervalMs = doc["rfScanMs"];
-    if (!doc["displayMs"].isNull()) cfg.displayUpdateMs = doc["displayMs"];
-    if (!doc["bleScanMs"].isNull()) cfg.bleScanIntervalMs = doc["bleScanMs"];
-    
-    
-    // GPS
-    if (!doc["gpsUpdateMs"].isNull()) cfg.gpsUpdateIntervalMs = doc["gpsUpdateMs"];
-    
-    // Logging
-    if (!doc["logLevel"].isNull()) cfg.logLevel = doc["logLevel"];
-    if (!doc["maxLogMB"].isNull()) cfg.maxLogSizeMB = doc["maxLogMB"];
-    
-    
-    // Stealth
-    if (!doc["stealthMode"].isNull()) cfg.stealthMode = doc["stealthMode"];
-    
+    if (!copyBounded(loaded.wifiSSID, sizeof(loaded.wifiSSID), ssid.as<const char*>()) ||
+        !copyBounded(loaded.wifiPassword, sizeof(loaded.wifiPassword),
+                     password.as<const char*>())) {
+        return false;
+    }
+    const int configuredChannel = channel.as<int>();
+    if (configuredChannel < 1 || configuredChannel > 13) return false;
+    loaded.wifiChannel = static_cast<uint8_t>(configuredChannel);
+
+    if (!doc["thresholds"]["low"].isNull()) loaded.rssiThresholdLow = doc["thresholds"]["low"];
+    if (!doc["thresholds"]["medium"].isNull()) loaded.rssiThresholdMedium = doc["thresholds"]["medium"];
+    if (!doc["thresholds"]["high"].isNull()) loaded.rssiThresholdHigh = doc["thresholds"]["high"];
+    if (!doc["thresholds"]["critical"].isNull()) loaded.rssiThresholdCritical = doc["thresholds"]["critical"];
+    if (!doc["rfScanMs"].isNull()) loaded.rfScanIntervalMs = doc["rfScanMs"];
+    if (!doc["displayMs"].isNull()) loaded.displayUpdateMs = doc["displayMs"];
+    if (!doc["bleScanMs"].isNull()) loaded.bleScanIntervalMs = doc["bleScanMs"];
+    if (!doc["gpsUpdateMs"].isNull()) loaded.gpsUpdateIntervalMs = doc["gpsUpdateMs"];
+    if (!doc["logLevel"].isNull()) loaded.logLevel = doc["logLevel"];
+    if (!doc["maxLogMB"].isNull()) loaded.maxLogSizeMB = doc["maxLogMB"];
+    if (!doc["stealthMode"].isNull()) loaded.stealthMode = doc["stealthMode"];
+
+    if (!validateNetworkConfig(loaded)) return false;
+    cfg = loaded;
+    if (strcmp(cfg.wifiSSID, kRetiredPublicSsid) == 0) {
+        generateNetworkCredentials();
+        return save();
+    }
     return true;
 }
 
 bool ConfigManager::save() {
     if (!spiffsReady) return false;
-    
     File file = SPIFFS.open(CONFIG_FILE, "w");
-    if (!file) {
-        Serial.println("[CONFIG] Cannot write config file");
-        return false;
-    }
-    
+    if (!file) return false;
+
     JsonDocument doc;
-    
-    // WiFi
     doc["wifi"]["ssid"] = cfg.wifiSSID;
     doc["wifi"]["password"] = cfg.wifiPassword;
-    doc["wifi"]["apMode"] = cfg.wifiAPMode;
     doc["wifi"]["channel"] = cfg.wifiChannel;
-    
-    // RSSI thresholds
     doc["thresholds"]["low"] = cfg.rssiThresholdLow;
     doc["thresholds"]["medium"] = cfg.rssiThresholdMedium;
     doc["thresholds"]["high"] = cfg.rssiThresholdHigh;
     doc["thresholds"]["critical"] = cfg.rssiThresholdCritical;
-    
-    // Scan intervals
     doc["rfScanMs"] = cfg.rfScanIntervalMs;
     doc["displayMs"] = cfg.displayUpdateMs;
     doc["bleScanMs"] = cfg.bleScanIntervalMs;
-    
-    
-    // GPS
     doc["gpsUpdateMs"] = cfg.gpsUpdateIntervalMs;
-    
-    // Logging
     doc["logLevel"] = cfg.logLevel;
     doc["maxLogMB"] = cfg.maxLogSizeMB;
-    
-    
-    // Stealth
     doc["stealthMode"] = cfg.stealthMode;
-    
-    size_t written = serializeJsonPretty(doc, file);
+    const size_t written = serializeJsonPretty(doc, file);
     file.close();
-    
     Serial.printf("[CONFIG] Saved (%u bytes)\n", written);
     return written > 0;
 }
 
 bool ConfigManager::reset() {
-    setDefaults();
-    return save();
+    if (!spiffsReady) return false;
+    networkCredentialsGenerated = false;
+    // Keep the active credential in RAM until reboot so this authenticated
+    // request cannot weaken management access before the new AP is generated.
+    // The next boot has no file and therefore creates/displays a new secret.
+    return !SPIFFS.exists(CONFIG_FILE) || SPIFFS.remove(CONFIG_FILE);
 }
 
-bool ConfigManager::setWifi(const char* ssid, const char* password, bool apMode) {
-    strlcpy(cfg.wifiSSID, ssid, sizeof(cfg.wifiSSID));
-    strlcpy(cfg.wifiPassword, password, sizeof(cfg.wifiPassword));
-    cfg.wifiAPMode = apMode;
+bool ConfigManager::setWifi(const char* ssid, const char* password, uint8_t channel) {
+    RuntimeConfig updated = cfg;
+    if (!copyBounded(updated.wifiSSID, sizeof(updated.wifiSSID), ssid) ||
+        !copyBounded(updated.wifiPassword, sizeof(updated.wifiPassword), password)) {
+        return false;
+    }
+    updated.wifiChannel = channel;
+    if (!validateNetworkConfig(updated)) return false;
+    cfg = updated;
     return save();
 }
 
@@ -185,27 +194,19 @@ bool ConfigManager::setScanInterval(uint32_t rfMs) {
     return save();
 }
 
-
 String ConfigManager::toJSON() const {
     JsonDocument doc;
-    
     doc["wifi"]["ssid"] = cfg.wifiSSID;
-    doc["wifi"]["apMode"] = cfg.wifiAPMode;
     doc["wifi"]["channel"] = cfg.wifiChannel;
-    
     doc["thresholds"]["low"] = cfg.rssiThresholdLow;
     doc["thresholds"]["medium"] = cfg.rssiThresholdMedium;
     doc["thresholds"]["high"] = cfg.rssiThresholdHigh;
     doc["thresholds"]["critical"] = cfg.rssiThresholdCritical;
-    
     doc["rfScanMs"] = cfg.rfScanIntervalMs;
     doc["displayMs"] = cfg.displayUpdateMs;
     doc["bleScanMs"] = cfg.bleScanIntervalMs;
-    
     doc["logLevel"] = cfg.logLevel;
-    
     doc["stealthMode"] = cfg.stealthMode;
-    
     String output;
     serializeJson(doc, output);
     return output;
@@ -213,33 +214,55 @@ String ConfigManager::toJSON() const {
 
 bool ConfigManager::fromJSON(const char* json) {
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, json);
-    if (error) return false;
-    
-    // Apply only fields that are present
-    if (doc["wifi"]["ssid"]) strlcpy(cfg.wifiSSID, doc["wifi"]["ssid"], sizeof(cfg.wifiSSID));
-    if (doc["wifi"]["password"]) strlcpy(cfg.wifiPassword, doc["wifi"]["password"], sizeof(cfg.wifiPassword));
-    if (!doc["wifi"]["apMode"].isNull()) cfg.wifiAPMode = doc["wifi"]["apMode"];
-    if (!doc["wifi"]["channel"].isNull()) cfg.wifiChannel = doc["wifi"]["channel"];
-    
-    if (!doc["thresholds"]["low"].isNull()) cfg.rssiThresholdLow = doc["thresholds"]["low"];
-    if (!doc["thresholds"]["medium"].isNull()) cfg.rssiThresholdMedium = doc["thresholds"]["medium"];
-    if (!doc["thresholds"]["high"].isNull()) cfg.rssiThresholdHigh = doc["thresholds"]["high"];
-    if (!doc["thresholds"]["critical"].isNull()) cfg.rssiThresholdCritical = doc["thresholds"]["critical"];
-    
-    if (!doc["rfScanMs"].isNull()) cfg.rfScanIntervalMs = doc["rfScanMs"];
-    if (!doc["logLevel"].isNull()) cfg.logLevel = doc["logLevel"];
-    if (!doc["stealthMode"].isNull()) cfg.stealthMode = doc["stealthMode"];
-    
+    const DeserializationError error = deserializeJson(doc, json);
+    if (error || !doc.is<JsonObject>()) return false;
+
+    RuntimeConfig updated = cfg;
+    const JsonVariantConst wifi = doc["wifi"];
+    if (!wifi.isNull()) {
+        if (!wifi.is<JsonObject>()) return false;
+        const JsonObjectConst wifiObject = wifi.as<JsonObjectConst>();
+        if (!wifiObject["apMode"].isNull()) return false;
+        if (!wifiObject["ssid"].isNull()) {
+            if (!wifiObject["ssid"].is<const char*>() ||
+                !copyBounded(updated.wifiSSID, sizeof(updated.wifiSSID),
+                             wifiObject["ssid"].as<const char*>())) {
+                return false;
+            }
+        }
+        if (!wifiObject["password"].isNull()) {
+            if (!wifiObject["password"].is<const char*>() ||
+                !copyBounded(updated.wifiPassword, sizeof(updated.wifiPassword),
+                             wifiObject["password"].as<const char*>())) {
+                return false;
+            }
+        }
+        if (!wifiObject["channel"].isNull()) {
+            if (!wifiObject["channel"].is<int>()) return false;
+            const int channel = wifiObject["channel"].as<int>();
+            if (channel < 1 || channel > 13) return false;
+            updated.wifiChannel = static_cast<uint8_t>(channel);
+        }
+    }
+    if (!validateNetworkConfig(updated)) return false;
+
+    if (!doc["thresholds"]["low"].isNull()) updated.rssiThresholdLow = doc["thresholds"]["low"];
+    if (!doc["thresholds"]["medium"].isNull()) updated.rssiThresholdMedium = doc["thresholds"]["medium"];
+    if (!doc["thresholds"]["high"].isNull()) updated.rssiThresholdHigh = doc["thresholds"]["high"];
+    if (!doc["thresholds"]["critical"].isNull()) updated.rssiThresholdCritical = doc["thresholds"]["critical"];
+    if (!doc["rfScanMs"].isNull()) updated.rfScanIntervalMs = doc["rfScanMs"];
+    if (!doc["logLevel"].isNull()) updated.logLevel = doc["logLevel"];
+    if (!doc["stealthMode"].isNull()) updated.stealthMode = doc["stealthMode"];
+    cfg = updated;
     return save();
 }
 
 void ConfigManager::printConfig() const {
     Serial.println("=== Runtime Configuration ===");
-    Serial.printf("WiFi SSID: %s (%s)\n", cfg.wifiSSID, cfg.wifiAPMode ? "AP" : "STA");
-    Serial.printf("Thresholds: L=%d M=%d H=%d C=%d\n",
-                  cfg.rssiThresholdLow, cfg.rssiThresholdMedium,
-                  cfg.rssiThresholdHigh, cfg.rssiThresholdCritical);
+    Serial.printf("AP SSID: %s (channel %u)\n", cfg.wifiSSID, cfg.wifiChannel);
+    Serial.printf("Thresholds: L=%d M=%d H=%d C=%d\n", cfg.rssiThresholdLow,
+                  cfg.rssiThresholdMedium, cfg.rssiThresholdHigh,
+                  cfg.rssiThresholdCritical);
     Serial.printf("RF Scan: %lu ms\n", cfg.rfScanIntervalMs);
     Serial.printf("Log Level: %d\n", cfg.logLevel);
     Serial.printf("Stealth Mode: %s\n", cfg.stealthMode ? "ON" : "OFF");
