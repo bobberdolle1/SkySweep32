@@ -26,8 +26,8 @@ OLED · SD-журналы · локальный Web UI · оповещения �
 | 2.4 ГГц | собирается; RSSI-обзор SX1281 | нет | только энергия/активность |
 | 5.8 ГГц | собирается; RX5808 и аналоговый RSSI | нет | нужен входной и стендовый контроль |
 | GNSS, microSD, OLED, кнопки, батарея | исходники + контракт Rev C | платы нет | нужен физический запуск |
-| Wi-Fi Web UI, BLE, ESP-NOW | исходники собираются | запуска/дальности Rev C нет | экспериментально на Rev C |
-| Remote ID | BLE parser в исходниках | нет conformance fixture/test | экспериментально; не заявление о стандарте |
+| Wi-Fi Web UI, ESP-NOW | исходники собираются | запуска/дальности Rev C нет | уникальный AP на устройство; authorization управления/logs; экспериментально на Rev C |
+| Remote ID | сохранённый BLE parser | нет association/conformance fixture или hardware test | экспериментальный код отключён по умолчанию |
 | MAVLink / CRSF | host-тесты ограниченных parser | нет демодулированного входа Rev C | только parser infrastructure |
 | ATAK, LoRa/Meshtastic, TinyML, 5.8 video | текущего product path нет | нет | только roadmap |
 

@@ -5,12 +5,13 @@ localization contributions. Read [CONTRIBUTING.md](../../CONTRIBUTING.md) before
 opening a pull request.
 
 ## Local checks
-
 ```bash
 make -C test/host
-cppcheck --enable=warning --std=c++11 \
-  -DBOARD_SKYSWEEP32_REV_C -DPROFILE_PASSIVE_MONITOR \
-  -I src -I src/drivers -I src/protocols src
+cppcheck --enable=warning --inline-suppr \
+  --suppress=missingInclude --suppress=missingIncludeSystem \
+  --std=c++11 -DBOARD_SKYSWEEP32_REV_C -DPROFILE_PASSIVE_MONITOR \
+  -I src -I src/drivers -I src/protocols --error-exitcode=1 src
+python tools/development/verify_prototype1_security.py
 pio run -e esp32s3_rev_c_passive
 ```
 

@@ -4,12 +4,13 @@ SkySweep32 принимает firmware, RF-measurement, mechanical, documentatio
 localization вклад. До pull request прочитайте [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## Локальные проверки
-
 ```bash
 make -C test/host
-cppcheck --enable=warning --std=c++11 \
-  -DBOARD_SKYSWEEP32_REV_C -DPROFILE_PASSIVE_MONITOR \
-  -I src -I src/drivers -I src/protocols src
+cppcheck --enable=warning --inline-suppr \
+  --suppress=missingInclude --suppress=missingIncludeSystem \
+  --std=c++11 -DBOARD_SKYSWEEP32_REV_C -DPROFILE_PASSIVE_MONITOR \
+  -I src -I src/drivers -I src/protocols --error-exitcode=1 src
+python tools/development/verify_prototype1_security.py
 pio run -e esp32s3_rev_c_passive
 ```
 

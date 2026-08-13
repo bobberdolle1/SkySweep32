@@ -24,10 +24,17 @@ required power, RF, GNSS, storage, display, network, and enclosure evidence.
 
 ## Local web UI
 
-After a successful physical Wi-Fi bring-up, the firmware starts its local AP and
-prints its address over USB serial. The dashboard reports receiver activity,
-local state, and experimental Remote ID reports. It does not confer transmitter
-identity or Remote ID conformance.
+At first boot—or the first boot after a factory reset—the firmware generates a
+unique WPA2 AP password, stores it in SPIFFS, and shows the AP SSID/password on
+the OLED and USB serial console. Later boots reuse the stored credential.
+
+The dashboard and status telemetry are readable to clients admitted to that AP.
+Management configuration, power policy, and SD logs require HTTP Basic
+authentication: username `admin`, password = that per-device AP password.
+`POST /api/config` persists changes for the next reboot; Rev C currently
+supports AP mode only. Remote ID code is retained but **disabled by default**;
+it is experimental and not a standards claim. USB is the only Prototype #1
+firmware update route; there is no network OTA endpoint.
 
 ## Questions and bugs
 

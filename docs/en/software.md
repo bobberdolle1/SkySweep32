@@ -12,15 +12,20 @@ before each build.
 - `gps_module.*`, `data_logger.*`, `power_manager.*`: GNSS, logs and portable-power state.
 - `web_server.*` plus `dashboard.html`: local dashboard/API.
 - `espnow_mesh.*`: local SkySweep32 event sharing; range/coexistence need tests.
-- `remote_id_detector.*`: experimental BLE receive/parser path; not ASTM/ASD-STAN conformance.
+- `remote_id_detector.*`: retained experimental BLE parser; disabled in the
+  canonical build pending defensible multi-transmitter association tests.
 - `protocols/`: CRSF and MAVLink bounded parsers. They are not wired proof of over-air protocol reception.
 
 ## Logging and web UI
 
 The web server and microSD logger consume local receiver activity and device
 state. Logs may contain sensitive location or receiver information; collect,
-store, and share them lawfully. OTA and configuration endpoints should only be
-used on a trusted local network after physical bring-up.
+store, and share them lawfully. The AP password is per-device, generated on
+first boot, and is never returned by a GET API. Dashboard/status telemetry is
+read-only for AP clients; configuration, power changes, and logs require
+`admin` plus that password. Network changes persist and require reboot; Rev C
+supports AP mode only. USB is the only Prototype #1 update route—there is no
+OTA endpoint.
 
 ## Networking boundary
 

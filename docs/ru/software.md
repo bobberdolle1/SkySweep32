@@ -12,15 +12,20 @@
 - `gps_module.*`, `data_logger.*`, `power_manager.*`: GNSS, логи и portable power state.
 - `web_server.*` и `dashboard.html`: локальный dashboard/API.
 - `espnow_mesh.*`: обмен событиями между узлами; дальность/coexistence не измерены.
-- `remote_id_detector.*`: экспериментальный BLE receive/parser, не ASTM/ASD-STAN conformance.
+- `remote_id_detector.*`: сохранённый экспериментальный BLE parser; отключён в
+  канонической сборке до проверяемой association нескольких передатчиков.
 - `protocols/`: bounded parser CRSF и MAVLink; они не доказывают over-air reception.
 
 ## Журналы и Web UI
 
 Web server и microSD logger используют локальную активность приёмников и
 состояние устройства. Логи могут содержать чувствительные location/receiver
-данные; собирайте, храните и публикуйте их законно. OTA и config endpoints
-используйте только в доверенной локальной сети после физического запуска.
+данные; собирайте, храните и публикуйте их законно. Пароль AP уникален для
+каждого устройства, создаётся при первом запуске и никогда не возвращается GET
+API. Dashboard/status telemetry доступны клиентам AP только для чтения;
+изменение config, power и доступ к logs требуют `admin` и этот пароль. Network
+изменения сохраняются и требуют reboot; Rev C поддерживает только AP mode. USB
+— единственный путь обновления Prototype #1; OTA endpoint отсутствует.
 
 ## Граница networking
 

@@ -234,8 +234,8 @@ def main() -> int:
             "erc": "kicad-cli sch erc --severity-error --severity-warning --exit-code-violations",
             "drc": "kicad-cli pcb drc --refill-zones --severity-error --severity-warning --exit-code-violations",
             "pcba": "kicad-cli pcb export step --force",
-            "mechanical": "FreeCAD generate_3d_models.py && FreeCAD generate_enclosure.py",
-            "fabrication": "python hardware/rev_c/export_manufacturing.py",
+            "mechanical": "FreeCAD tools/hardware/rev_c/generate_3d_models.py && FreeCAD tools/hardware/rev_c/generate_enclosure.py",
+            "fabrication": "python tools/hardware/rev_c/export_manufacturing.py",
             "firmware": "pio run -e esp32s3_rev_c_passive",
         },
         "gates": {

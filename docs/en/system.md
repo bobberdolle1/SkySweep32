@@ -27,8 +27,8 @@ production capability.
 | 2.4 GHz | builds; SX1281 RSSI sweep | none | energy/activity only |
 | 5.8 GHz | builds; RX5808 channels and analog RSSI | none | incoming module check and bench response required |
 | GNSS, microSD, OLED, controls, battery | source + Rev C contract | no board | requires physical bring-up |
-| Wi-Fi web UI, BLE receive, ESP-NOW | source builds | no Rev C run/range test | experimental on Rev C |
-| Remote ID | BLE parser source | no conformance fixture/hardware test | experimental; not a standards claim |
+| Wi-Fi web UI, ESP-NOW | source builds | no Rev C run/range test | unique per-device AP; management/log authorization; experimental on Rev C |
+| Remote ID | retained BLE parser source | no association/conformance fixture or hardware test | experimental code disabled by default |
 | MAVLink / CRSF | host-tested bounded parsers | no Rev C demodulated input | parser infrastructure only |
 | ATAK, LoRa/Meshtastic, TinyML, 5.8 video | no current product path | none | roadmap only |
 

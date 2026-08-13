@@ -21,6 +21,8 @@ Do not use Rev A/Rev B assets or the historical `v0.6.1` binaries.
 python tools/development/generate_rev_c_pinmap.py --check
 python tools/development/generate_dashboard.py --check
 python tools/hardware/rev_c/verify_schematic_parity.py
+python tools/development/verify_documented_commands.py
+python tools/development/verify_prototype1_security.py
 python tools/hardware/verify.py
 ```
 

@@ -25,11 +25,15 @@ hashes. It does not certify a supplier output or an assembled board.
 
 ## Required checks before purchase
 
-From the repository root, with the pinned tools in `hardware/toolchain.json`:
+From the repository root, with the pinned tools in `tools/hardware/toolchain.json`:
 
 ```bash
-python hardware/rev_c/verify_schematic_parity.py
-python hardware/verify.py
+python tools/development/generate_rev_c_pinmap.py --check
+python tools/development/generate_dashboard.py --check
+python tools/hardware/rev_c/verify_schematic_parity.py
+python tools/hardware/verify.py
+python tools/development/verify_documented_commands.py
+python tools/development/verify_prototype1_security.py
 ```
 
 The first command proves that the human-readable hierarchy preserves the
