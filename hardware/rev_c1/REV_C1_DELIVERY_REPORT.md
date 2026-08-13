@@ -36,6 +36,7 @@ This is the correct conservative result. The independent review found real pre-f
 
 - **Passed native schematic ERC:** KiCad 10.0.5 reports zero Rev C.1 ERC violations after correcting the project footprint-library table; reconfirmed in the current worktree on 2026-08-13.
 - **Failed native PCB DRC:** KiCad 10.0.5 reports 11 violations and 7 unconnected items in the inherited/layout-incomplete board. This is recorded in `validation/NATIVE_KICAD_CHECKS.md`; no DRC-clean claim is made.
+- **Passed native schematic/PCB net parity:** `python tools/hardware/rev_c1/verify_schematic_pcb_parity.py` reports **357 fitted PCB pads** on their exported native schematic nets. This proves the inherited source contract only; it does not validate incomplete Rev C.1 physical design.
 - **Passed generated-contract check:** `python tools/development/generate_rev_c1_pinmap.py --check` accepted the Rev C.1 manifest and checked-in header. It proves only the declared GPIO/profile invariants.
 - **Passed dashboard syntax/asset check:** JavaScript extracted from `src/dashboard.html` parses with Bun; `generate_dashboard.py` regenerated the gzip include, then the PlatformIO preflight accepted it.
 - **Passed firmware build and host tests:** on 2026-08-13, `pio run -e esp32s3_rev_c1_detector` completed in 6.62 s and WSL-hosted ASan/UBSan tests completed with **42 passed, 0 failed**. The compile-safe profile verifies the generated pin contract and code compile together; it does not validate absent physical circuitry.
