@@ -70,4 +70,4 @@ performance. Follow the [Prototype #1 checklist](hardware/rev_c/PROTOTYPE_VALIDA
 
 ## Community and legal boundary
 
-Use [Discussions](https://github.com/bobberdolle1/SkySweep32/discussions) for questions and ideas; use [Issues](https://github.com/bobberdolle1/SkySweep32/issues) for reproducible bugs and Prototype #1 evidence. Operate only under applicable spectrum, privacy, aviation, and data laws. Read [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), and the [GPL-3.0 license](LICENSE).
+Use [Discussions](https://github.com/bobberdolle1/SkySweep32/discussions) for questions and ideas; use [Issues](https://github.com/bobberdolle1/SkySweep32/issues) for reproducible bugs and Prototype #1 evidence. Operate only under applicable spectrum, privacy, aviation, and data laws. Read [SECURITY.md](.github/SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), and the [GPL-3.0 license](LICENSE).

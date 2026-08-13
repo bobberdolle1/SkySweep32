@@ -30,9 +30,23 @@ def links(path: Path) -> list[str]:
     return pattern.findall(text)
 
 
+def documentation_sources() -> list[Path]:
+    root_documents = [
+        ROOT / "README.md",
+        ROOT / "BUILD_THIS.md",
+        ROOT / "CONTRIBUTING.md",
+    ]
+    return [
+        *[path for path in root_documents if path.is_file()],
+        *DOCS.rglob("*.md"),
+        *DOCS.rglob("*.html"),
+        *(ROOT / "hardware" / "rev_c").glob("*.md"),
+    ]
+
+
 def main() -> int:
     failures: list[str] = []
-    for path in [*DOCS.rglob("*.md"), *DOCS.rglob("*.html")]:
+    for path in documentation_sources():
         for target in links(path):
             resolved = local_target(path, target)
             if resolved is not None and not resolved.exists():
