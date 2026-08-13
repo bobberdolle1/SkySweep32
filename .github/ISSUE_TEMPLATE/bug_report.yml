@@ -1,0 +1,58 @@
+---
+name: Reproducible defect
+description: Report a firmware, documentation, build, or hardware-design defect
+title: "[bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        SkySweep32 Rev C is a first-prototype design. Do not report a physical
+        result as validated without the setup and raw evidence below. Do not put
+        security vulnerabilities here; follow SECURITY.md instead.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options: [Firmware, Rev C hardware, Enclosure, Documentation/site, Tooling/CI, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: State the observable result, including failure messages.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      placeholder: |
+        1. Commit / firmware SHA:
+        2. Command or physical setup:
+        3. Input / stimulus:
+        4. Observed result:
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and hardware provenance
+      placeholder: |
+        PlatformIO/tool version, OS, board revision, fabricator/assembler,
+        fitted BOM substitutions, power source, antenna and cable setup.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Attach serial output, raw logs, measurements, photos, screenshots, or relevant reports. Include negative results.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and did not expose a security vulnerability.
+          required: true
+        - label: I understand an unassembled Rev C cannot support a production or RF-performance claim.
+          required: true

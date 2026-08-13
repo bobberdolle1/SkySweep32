@@ -1,0 +1,30 @@
+name: Documentation Integrity
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'README.md'
+      - 'BUILD_THIS.md'
+      - 'CONTRIBUTING.md'
+      - 'docs/**'
+      - 'hardware/rev_c/*.md'
+      - 'tools/development/verify_docs_links.py'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify public local links
+        run: python tools/development/verify_docs_links.py

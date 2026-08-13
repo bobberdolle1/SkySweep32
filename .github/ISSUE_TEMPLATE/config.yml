@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and design discussion
+    url: https://github.com/bobberdolle1/SkySweep32/discussions
+    about: Ask questions, share ideas, or discuss future architecture.
+  - name: Security vulnerability reporting
+    url: https://github.com/bobberdolle1/SkySweep32/security/advisories/new
+    about: Report vulnerabilities privately under SECURITY.md.

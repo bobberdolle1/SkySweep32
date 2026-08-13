@@ -1,41 +1,39 @@
-name: Host Tests & Static Analysis
+name: Firmware Quality
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [master]
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - 'platformio.ini'
+      - '.github/workflows/host-tests.yml'
   pull_request:
-    branches: [ master ]
+    branches: [master]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   parser-tests:
+    name: parser-tests
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-
-    # The protocol parsers are pure logic and compile against a tiny Arduino.h
-    # stub, so they can be unit-tested with the runner's system g++ — no ESP32
-    # toolchain or PlatformIO registry needed. Built with ASan/UBSan so any
-    # out-of-bounds access on a malformed frame fails the job.
-    - name: Build & run parser tests (ASan/UBSan)
-      run: make -C test/host
+      - uses: actions/checkout@v4
+      - name: Build and run parser tests with ASan/UBSan
+        run: make -C test/host
 
   static-analysis:
+    name: static-analysis
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Install cppcheck
-      run: sudo apt-get update && sudo apt-get install -y cppcheck
-
-    # Analyze legacy compile-only optional paths and the current ESP-NOW path.
-    # Countermeasure source was removed; no obsolete active-feature macro is
-    # defined here.
-    - name: Run cppcheck (warnings)
-      run: |
-        cppcheck --enable=warning --inline-suppr \
-          --suppress=missingInclude --suppress=missingIncludeSystem \
-          --std=c++11 \
-          -DTIER_PRO -DMODULE_ACOUSTIC -DMODULE_COMPASS -DMODULE_ATAK -DMODULE_ML -DMODULE_ESPNOW \
-          -I src -I src/drivers -I src/protocols \
-          --error-exitcode=1 src
+      - uses: actions/checkout@v4
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+      - name: Analyze the canonical Rev C profile
+        run: |
+          cppcheck --enable=warning --inline-suppr \
+            --suppress=missingInclude --suppress=missingIncludeSystem \
+            --std=c++11 -DBOARD_SKYSWEEP32_REV_C -DPROFILE_PASSIVE_MONITOR \
+            -I src -I src/drivers -I src/protocols --error-exitcode=1 src

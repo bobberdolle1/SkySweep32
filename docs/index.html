@@ -2,118 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="SkySweep32: open-source passive multi-band RF monitor and logger for 855–925 MHz, 2.4 GHz, and 5.8 GHz observation.">
-  <title>SkySweep32 — Passive Multi-Band RF Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SkySweep32 is an open-source passive multi-band RF monitoring system built around the Rev C prototype hardware.">
+  <title>SkySweep32 — passive multi-band RF monitoring</title>
   <style>
-    :root { color-scheme:dark; --bg:#08111d; --panel:#101d2d; --panel2:#142438; --text:#e8eef7; --muted:#a6b5c8; --line:#2a405a; --cyan:#4dd4e8; --amber:#ffca62; --green:#67d69b; --red:#ff7b7b; --max:1120px; }
-    * { box-sizing:border-box } html { scroll-behavior:smooth } body { margin:0; background:radial-gradient(circle at 80% 0,#15314a 0,transparent 32rem),var(--bg); color:var(--text); font:16px/1.6 Inter,Segoe UI,Arial,sans-serif }
-    a { color:var(--cyan) } a:hover { color:white } nav { position:sticky; top:0; z-index:2; background:rgba(8,17,29,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--line) }
-    nav div { max-width:var(--max); margin:auto; padding:14px 24px; display:flex; gap:20px; align-items:center; flex-wrap:wrap } nav strong { margin-right:auto; letter-spacing:.08em } nav a { text-decoration:none; color:var(--muted) }
-    main { max-width:var(--max); margin:auto; padding:0 24px 80px } header { padding:82px 0 50px; display:grid; grid-template-columns:minmax(0,1.1fr) minmax(260px,.9fr); gap:36px; align-items:center }
-    .eyebrow { color:var(--cyan); font-size:.82rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700 } h1 { font-size:clamp(3rem,7vw,5.7rem); line-height:.98; margin:18px 0 22px; letter-spacing:-.05em } h2 { font-size:clamp(1.8rem,4vw,2.8rem); line-height:1.1; margin:64px 0 18px } h3 { margin-top:0 }
-    .lede { max-width:760px; color:var(--muted); font-size:1.18rem }.preview { width:100%; border:1px solid var(--line); border-radius:14px; background:var(--panel); box-shadow:0 18px 48px rgba(0,0,0,.28) }
-    .status { margin:30px 0; padding:20px 22px; border:1px solid var(--amber); background:rgba(255,202,98,.08); border-radius:12px }.status strong { color:var(--amber); display:block; font-size:1.02rem; letter-spacing:.04em }
-    .actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:24px }.btn { display:inline-block; padding:11px 16px; border:1px solid var(--cyan); border-radius:8px; text-decoration:none; font-weight:700 }.btn.primary { background:var(--cyan); color:#06202a }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(235px,1fr)); gap:16px }.card { background:linear-gradient(145deg,var(--panel2),var(--panel)); border:1px solid var(--line); padding:22px; border-radius:12px }.card p { color:var(--muted); margin-bottom:0 }
-    table { width:100%; border-collapse:collapse; background:var(--panel); font-size:.94rem } th,td { text-align:left; vertical-align:top; padding:12px; border:1px solid var(--line) } th { background:var(--panel2); color:var(--cyan) }.scroll { overflow-x:auto; border-radius:10px }.yes { color:var(--green); font-weight:700 }.no { color:var(--red); font-weight:700 }.limit { color:var(--amber); font-weight:700 }
-    code { background:#07101b; border:1px solid var(--line); padding:.12em .35em; border-radius:4px } pre { background:#050c15; border:1px solid var(--line); padding:18px; overflow:auto; border-radius:10px; color:#cce7ef }.ru { border-top:1px solid var(--line); margin-top:74px; padding-top:12px }.fine { color:var(--muted); font-size:.9rem } footer { border-top:1px solid var(--line); color:var(--muted); padding:28px 0; margin-top:70px }
-    @media(max-width:760px) { header { padding-top:52px; grid-template-columns:1fr } nav div { gap:12px } th,td { min-width:165px } .preview { max-width:520px } }
+    :root{color-scheme:dark;--ink:#eaf0f8;--muted:#a9b7c9;--bg:#07101a;--panel:#0e1b2a;--line:#29445d;--accent:#62d9ec;--ok:#7bdca5;--warn:#ffd16d;--max:1120px}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 0,#17334a,transparent 36rem),var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--accent)}a:hover{color:#fff}nav{position:sticky;top:0;z-index:1;background:#07101ae8;backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}nav div,main,footer{max-width:var(--max);margin:auto;padding-left:24px;padding-right:24px}nav div{min-height:58px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}nav strong{letter-spacing:.09em;margin-right:auto}nav a{text-decoration:none;color:var(--muted)}header{padding:80px 0 46px;display:grid;grid-template-columns:1.05fr .95fr;gap:42px;align-items:center}.eyebrow{color:var(--accent);font-size:.8rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase}h1{font-size:clamp(3rem,8vw,6rem);line-height:.94;letter-spacing:-.055em;margin:18px 0}h2{font-size:clamp(1.8rem,4vw,2.7rem);line-height:1.12;margin:70px 0 20px}.lede{font-size:1.16rem;color:var(--muted);max-width:720px}.notice{margin:28px 0;padding:18px 20px;border:1px solid var(--warn);border-radius:12px;background:#ffd16d12}.notice strong{display:block;color:var(--warn);letter-spacing:.04em}.actions{display:flex;flex-wrap:wrap;gap:12px}.button{display:inline-block;padding:10px 15px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:700}.button.primary{color:#05202a;background:var(--accent)}.visual{width:100%;border:1px solid var(--line);border-radius:15px;background:var(--panel)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:16px}.card{padding:21px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(145deg,#112338,var(--panel))}.card h3{margin:0 0 10px}.card p{color:var(--muted);margin:0}.scroll{overflow:auto;border:1px solid var(--line);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:720px}th,td{padding:13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}th{color:var(--accent);background:#112338}.yes{color:var(--ok);font-weight:700}.limit{color:var(--warn);font-weight:700}.lang{border-top:1px solid var(--line);margin-top:68px;padding-top:10px}footer{border-top:1px solid var(--line);margin-top:70px;padding-top:28px;padding-bottom:38px;color:var(--muted);font-size:.92rem}@media(max-width:760px){header{grid-template-columns:1fr;padding-top:48px}nav div{gap:11px}h2{margin-top:48px}}
   </style>
 </head>
 <body>
-<nav><div><strong>SKYSWEEP32</strong><a href="#what">What it is</a><a href="#hardware">Hardware</a><a href="#build">Build</a><a href="#roadmap">Roadmap</a><a href="#validation">Validation</a><a href="#russian">Русский</a><a href="https://github.com/bobberdolle1/SkySweep32">GitHub</a></div></nav>
+<nav><div><strong>SKYSWEEP32</strong><a href="#system">System</a><a href="#capabilities">Capabilities</a><a href="#build">Build</a><a href="#evidence">Evidence</a><a href="#russian">Русский</a><a href="https://github.com/bobberdolle1/SkySweep32">GitHub</a></div></nav>
 <main>
-<header id="what">
-  <div>
-    <div class="eyebrow">Open-source passive multi-band RF monitor</div>
-    <h1>SkySweep32</h1>
-    <p class="lede">Observe RF activity across 855–925 MHz, 2.4 GHz, and 5.8 GHz, then pair it with GNSS, local logging, a display, battery operation, and a local web UI.</p>
-    <div class="status"><strong>FIRST PHYSICAL PROTOTYPE — NOT PRODUCTION VALIDATED</strong>Rev C is the current hardware revision and is ready for its first physical prototype. No Rev C board has yet been assembled or bench-tested.</div>
-    <div class="actions"><a class="btn primary" href="https://github.com/bobberdolle1/SkySweep32/blob/master/BUILD_THIS.md">Build Rev C</a><a class="btn" href="https://github.com/bobberdolle1/SkySweep32/tree/master/hardware/rev_c">Hardware</a><a class="btn" href="https://github.com/bobberdolle1/SkySweep32#firmware-compatibility">Firmware</a><a class="btn" href="#roadmap">Roadmap</a><a class="btn" href="https://github.com/bobberdolle1/SkySweep32">GitHub</a></div>
-  </div>
-  <img class="preview" loading="lazy" alt="SkySweep32 Rev C PCB assembly preview" src="https://raw.githubusercontent.com/bobberdolle1/SkySweep32/master/hardware/rev_c/previews/pcb_iso.png">
-</header>
+  <header>
+    <div>
+      <div class="eyebrow">Open-source passive multi-band RF monitoring</div>
+      <h1>SkySweep32</h1>
+      <p class="lede">A coherent system for observing relative RF activity at 855–925 MHz, 2.4 GHz, and 5.8 GHz, then recording and presenting that evidence locally.</p>
+      <div class="notice"><strong>READY FOR FIRST PHYSICAL PROTOTYPE — NOT PRODUCTION VALIDATED</strong>Rev C is the current PCB and enclosure. No Rev C board has been assembled, bench-tested, RF-characterized, compliance-tested, or field-tested.</div>
+      <div class="actions"><a class="button primary" href="https://github.com/bobberdolle1/SkySweep32/blob/master/BUILD_THIS.md">Build Rev C</a><a class="button" href="https://github.com/bobberdolle1/SkySweep32/tree/master/hardware/rev_c">Hardware package</a><a class="button" href="#evidence">Validation boundary</a></div>
+    </div>
+    <img class="visual" src="assets/system-architecture.svg" alt="Diagram of the three passive RF paths, ESP32-S3 core, and local outputs">
+  </header>
 
-<section>
-  <h2>What SkySweep32 is</h2>
-  <p class="lede">SkySweep32 Rev C combines three passive RSSI/activity observation paths with local logging, positioning, display, battery operation, and networking in one open-source device. It observes energy and activity; it does not identify transmitters, demodulate protocols or video, find RF bearing, or create active interference.</p>
-</section>
+  <section id="system"><h2>One system, clear boundaries</h2><div class="grid"><article class="card"><h3>Passive inputs</h3><p>Three fitted receive paths provide relative RSSI/activity observations. They do not identify a transmitter, demodulate a protocol or video, calculate a bearing, or prove range.</p></article><article class="card"><h3>Local evidence</h3><p>The ESP32-S3 coordinates GNSS, microSD logs, OLED, alerts, and a local Web UI. Data handling remains subject to local privacy and aviation law.</p></article><article class="card"><h3>Experimental networking</h3><p>Wi-Fi, BLE receive, and ESP-NOW paths build from source. On Rev C, range, coexistence, and standards conformance are still physical-test work.</p></article></div></section>
 
-<section id="hardware">
-  <h2>Hardware</h2>
-  <div class="grid">
-    <article class="card"><h3>RF observation</h3><p>E07-900M10S/CC1101 for 855–925 MHz, E28-2G4M12SX/SX1281 for 2.4 GHz, and RX5808 for eight selected 5.8 GHz channels with analog RSSI.</p></article>
-    <article class="card"><h3>Core device</h3><p>ESP32-S3-WROOM-1-N16R8, native USB-C, SAM-M10Q GNSS, microSD, an Adafruit OLED, controls, buzzer, protected battery path, Wi-Fi, BLE receive functions, and ESP-NOW source support.</p></article>
-    <article class="card"><h3>Integrated prototype</h3><p>150 × 95 mm four-layer PCB and a 165.4 × 117.4 × 33.5 mm printed indoor enclosure designed around the PCBA, battery, display, antennas, cables, and M3 hardware.</p></article>
-  </div>
-</section>
+  <section id="capabilities"><h2>Capabilities, not marketing</h2><div class="scroll"><table><thead><tr><th>Area</th><th>What exists now</th><th>What remains unproven</th></tr></thead><tbody><tr><td>855–925 MHz</td><td class="yes">CC1101 RSSI/activity samples at 860, 890, and 920 MHz</td><td class="limit">Sensitivity, selectivity, antenna behavior, false activity</td></tr><tr><td>2.4 GHz / 5.8 GHz</td><td class="yes">SX1281 RSSI sweep and RX5808 analog RSSI path</td><td class="limit">Input acceptance, response, self-interference and RF performance</td></tr><tr><td>GNSS, SD, OLED, controls, power</td><td class="yes">Fitted Rev C contract and firmware paths</td><td class="limit">First-board bring-up, charge/thermal safety, endurance, serviceability</td></tr><tr><td>Web UI, BLE, ESP-NOW, Remote ID</td><td class="yes">Source implementation and parser/receive infrastructure</td><td class="limit">No Rev C runtime, range, over-air, or standards conformance claim</td></tr><tr><td>LoRa/Meshtastic, TinyML, ATAK, 5.8 video</td><td>Not current Rev C capabilities</td><td class="limit">Separate evidence-backed future work only</td></tr></tbody></table></div></section>
 
-<section id="capabilities">
-  <h2>Capabilities</h2>
-  <div class="scroll"><table><thead><tr><th>Function</th><th>Rev C implementation</th><th>Current boundary</th></tr></thead><tbody>
-    <tr><td>855–925 MHz</td><td>E07-900M10S / CC1101 RSSI and activity</td><td>RF response unmeasured; no 433 MHz; no protocol identity</td></tr>
-    <tr><td>2.4 GHz</td><td>E28-2G4M12SX / SX1281 instantaneous-RSSI sweep</td><td>Energy/activity only; no demodulation or transmitter identity</td></tr>
-    <tr><td>5.8 GHz</td><td>RX5808 selected channels and analog RSSI</td><td>Each lot needs pinout acceptance; RF response is unmeasured</td></tr>
-    <tr><td>Wi-Fi / BLE / ESP-NOW</td><td>ESP32-S3 local dashboard and source support</td><td>No physical Rev C run; Remote ID has no conformance evidence</td></tr>
-    <tr><td>GNSS / logging / UI</td><td>Exact GNSS, microSD, OLED, and local controls</td><td>No live-fix, endurance, or physical UI test</td></tr>
-    <tr><td>TinyML / active interference</td><td><span class="no">Excluded from Rev C</span></td><td>No trained model; no jamming, injection, or GPS denial hardware</td></tr>
-  </tbody></table></div>
-</section>
+  <section id="build"><h2>Build the current design</h2><p class="lede">Use only the Rev C route. Rev A, Rev B, and historical v0.6.1 binaries target incompatible hardware and are not current order or flash sources.</p><div class="actions"><a class="button primary" href="https://github.com/bobberdolle1/SkySweep32/blob/master/BUILD_THIS.md">Current build route</a><a class="button" href="https://github.com/bobberdolle1/SkySweep32/blob/master/hardware/rev_c/BUILD.md">Fitted BOM and fabrication</a><a class="button" href="https://github.com/bobberdolle1/SkySweep32/blob/master/docs/en/getting-started.md">Firmware and bring-up</a></div></section>
 
-<section id="build">
-  <h2>Build</h2>
-  <p class="lede">Use the Rev C route only. The build entrypoint links the fabrication package, fitted BOM, enclosure, firmware, assembly procedure, and physical checklist without mixing revisions.</p>
-  <div class="actions"><a class="btn primary" href="https://github.com/bobberdolle1/SkySweep32/blob/master/BUILD_THIS.md">Build the current SkySweep32</a><a class="btn" href="https://github.com/bobberdolle1/SkySweep32/blob/master/hardware/rev_c/ASSEMBLY_AND_BRINGUP.md">Assembly and bring-up</a><a class="btn" href="https://github.com/bobberdolle1/SkySweep32/blob/master/hardware/rev_c/PROTOTYPE_VALIDATION_CHECKLIST.md">Physical checklist</a></div>
-  <p class="fine"><strong>Firmware compatibility:</strong> build Rev C from source with <code>pio run -e esp32s3_rev_c_passive</code>. Rev A, Rev B, and v0.6.1 binaries target incompatible legacy wiring.</p>
-</section>
+  <section id="evidence"><h2>Evidence before maturity</h2><p class="lede">Current reproducible checks cover schematic/PCB CAD, fabrication export, enclosure collision/service constraints, firmware build, and host parser contracts. They do not substitute for measured RF, power, USB, GNSS, mechanical tolerance, reliability, compliance, or field behavior.</p><div class="actions"><a class="button" href="https://github.com/bobberdolle1/SkySweep32/blob/master/hardware/rev_c/PROTOTYPE_VALIDATION_CHECKLIST.md">Prototype #1 checklist</a><a class="button" href="https://github.com/bobberdolle1/SkySweep32/blob/master/docs/en/validation.md">Validation details</a><a class="button" href="https://github.com/bobberdolle1/SkySweep32/blob/master/hardware/rev_c/ROADMAP.md">Evidence roadmap</a></div></section>
 
-<section id="software">
-  <h2>Software and networking</h2>
-  <div class="grid"><article class="card"><h3>Local operation</h3><p>ESP32-S3 source supports a local web UI, storage, GNSS, display, alerts, Wi-Fi/BLE receive functions, and ESP-NOW. A compiling source path is not a physical-device claim.</p></article><article class="card"><h3>Mesh direction</h3><p>The first mesh stage is ESP-NOW between SkySweep32 devices: timestamped events, node GNSS positions, a central dashboard, and event correlation. LoRa remains outside the Rev C motherboard.</p></article></div>
-</section>
-
-<section id="roadmap">
-  <h2>Roadmap</h2>
-  <p class="lede">Rev C Prototype #1 is architecture-frozen. Next decisions follow measurements of power, RF response, self-interference, RX5808 behavior, GNSS/storage/UI, and enclosure serviceability—not prettier CAD.</p>
-  <div class="actions"><a class="btn" href="https://github.com/bobberdolle1/SkySweep32/blob/master/hardware/rev_c/ROADMAP.md">Evidence-driven roadmap</a></div>
-</section>
-
-<section id="validation">
-  <h2>Validation and limitations</h2>
-  <p class="lede">Reproducible ERC, DRC, fabrication export, firmware compilation, and CAD interference gates pass. They are design/CAD evidence, not proof of RF performance, reliability, compliance, manufacturing yield, or field operation.</p>
-  <div class="actions"><a class="btn" href="https://github.com/bobberdolle1/SkySweep32/blob/master/hardware/rev_c/validation/verification_summary.json">Validation record</a><a class="btn" href="https://github.com/bobberdolle1/SkySweep32/blob/master/hardware/ENGINEERING_AUDIT_2026-08-11.md">Engineering audit</a></div>
-</section>
-
-<section id="history">
-  <h2>Engineering history</h2>
-  <p class="lede">Rev C is the only current hardware source. Rev B is a failed/unverified historical baseline and Rev A is parser-compatibility history. They are retained for audit, never for current procurement, assembly, pin maps, enclosures, or firmware flashing.</p>
-</section>
-
-<section class="ru" id="russian" lang="ru">
-  <div class="eyebrow">Open-source пассивный многодиапазонный RF-монитор</div>
-  <h2>SkySweep32</h2>
-  <p class="lede">Наблюдение RF-активности в диапазонах 855–925 МГц, 2.4 и 5.8 ГГц вместе с GNSS, локальным журналированием, дисплеем, питанием от аккумулятора и локальным web UI.</p>
-  <div class="status"><strong>ПЕРВЫЙ ФИЗИЧЕСКИЙ ПРОТОТИП — НЕ ПРОВЕРЕН ДЛЯ СЕРИЙНОГО ПРОИЗВОДСТВА</strong>Rev C — текущая аппаратная ревизия и готова к первому физическому прототипу. Плата Rev C ещё не собрана и не прошла стендовые испытания.</div>
-  <div class="actions"><a class="btn primary" href="https://github.com/bobberdolle1/SkySweep32/blob/master/BUILD_THIS.md">Собрать Rev C</a><a class="btn" href="https://github.com/bobberdolle1/SkySweep32/tree/master/hardware/rev_c">Аппаратная часть</a><a class="btn" href="https://github.com/bobberdolle1/SkySweep32#совместимость-прошивки">Прошивка</a><a class="btn" href="https://github.com/bobberdolle1/SkySweep32/blob/master/hardware/rev_c/ROADMAP.md">Дорожная карта</a><a class="btn" href="https://github.com/bobberdolle1/SkySweep32">GitHub</a></div>
-  <h2>Что это</h2>
-  <p class="lede">Rev C объединяет три пассивных тракта наблюдения RSSI/активности с журналированием, позиционированием, дисплеем, аккумулятором и сетью. Устройство наблюдает энергию и активность; оно не распознаёт передатчики, не демодулирует протоколы или видео, не выполняет пеленгацию и не создаёт активные помехи.</p>
-  <h2>Аппаратная часть</h2>
-  <div class="grid"><article class="card"><h3>RF-наблюдение</h3><p>E07-900M10S/CC1101 для 855–925 МГц, E28-2G4M12SX/SX1281 для 2.4 ГГц и RX5808 для восьми выбранных каналов 5.8 ГГц с аналоговым RSSI.</p></article><article class="card"><h3>Устройство</h3><p>ESP32-S3, native USB-C, GNSS SAM-M10Q, microSD, OLED, кнопки, зуммер, защищённый аккумулятор, Wi-Fi, приёмные BLE-функции и исходная поддержка ESP-NOW.</p></article><article class="card"><h3>Прототип</h3><p>Четырёхслойная PCB 150 × 95 мм и печатный корпус 165.4 × 117.4 × 33.5 мм вокруг PCBA, аккумулятора, дисплея, антенн, кабелей и M3-крепежа.</p></article></div>
-  <h2>Возможности</h2>
-  <p class="lede">855–925 МГц, 2.4 ГГц и 5.8 ГГц дают пассивное наблюдение энергии/RSSI, не распознавание протоколов. GNSS, microSD, OLED, Wi-Fi/BLE и ESP-NOW ещё требуют физических измерений. TinyML и активные помехи исключены из Rev C; LoRa не входит в материнскую плату Rev C.</p>
-  <h2>Сборка</h2>
-  <p class="lede">Используйте только маршрут Rev C: производственные файлы, fitted BOM, корпус, прошивку, инструкцию сборки и физический чек-лист. Rev A, Rev B и бинарные файлы v0.6.1 несовместимы с Rev C.</p>
-  <h2>Прошивка и сеть</h2>
-  <p class="lede">Собирайте <code>esp32s3_rev_c_passive</code> из исходного кода. Первая mesh-стадия — ESP-NOW между устройствами; возможное внешнее LoRa/Meshtastic-class расширение не является аппаратной частью Rev C.</p>
-  <h2>Дорожная карта</h2>
-  <p class="lede">Архитектура Prototype #1 заморожена. Измерения питания, RF-отклика, self-interference, RX5808, GNSS/storage/UI и корпуса определят только доказательные изменения Rev C.1.</p>
-  <h2>Валидация и ограничения</h2>
-  <p class="lede">Воспроизводимо проходят ERC, DRC, экспорт производства, сборка прошивки и CAD-проверки коллизий. Это CAD/build evidence, а не доказательство RF-характеристик, надёжности, соответствия нормам, производственного выхода или полевой работы.</p>
-  <h2>Инженерная история</h2>
-  <p class="lede">Rev C — единственный текущий источник аппаратной части. Rev B — неудачная/непроверенная историческая база, Rev A — история parser compatibility. Они сохранены для аудита и не предназначены для заказа, сборки, pin map, корпусов или прошивки Rev C.</p>
-</section>
-<footer>SkySweep32 is licensed under GNU GPL v3. Canonical Rev C is passive hardware. Follow local radio, privacy, aviation, and data laws.</footer>
+  <section class="lang" id="russian" lang="ru"><div class="eyebrow">Open-source пассивный многодиапазонный RF-мониторинг</div><h2>SkySweep32</h2><p class="lede">Система наблюдает относительную RF-активность в диапазонах 855–925 МГц, 2.4 и 5.8 ГГц и сохраняет локальные доказательства через GNSS, microSD, OLED и Web UI.</p><div class="notice"><strong>ГОТОВ К ПЕРВОМУ ФИЗИЧЕСКОМУ ПРОТОТИПУ — НЕ ПРОИЗВОДСТВЕННО ПРОВЕРЕН</strong>Rev C — текущая PCB и корпус. Собранной платы, RF-характеризации, compliance или field evidence пока нет.</div><p class="lede">Это пассивное наблюдение энергии/activity: не идентификация передатчика, не демодуляция, не пеленгация и не активное RF-воздействие. Wi-Fi, BLE и ESP-NOW требуют проверки на физическом Rev C; LoRa/Meshtastic, TinyML, ATAK и 5.8 video не являются возможностями Rev C.</p><div class="actions"><a class="button primary" href="https://github.com/bobberdolle1/SkySweep32/blob/master/BUILD_THIS.md">Собрать Rev C</a><a class="button" href="https://github.com/bobberdolle1/SkySweep32/blob/master/docs/ru/README.md">Русская документация</a><a class="button" href="https://github.com/bobberdolle1/SkySweep32/discussions">Обсуждения</a></div></section>
 </main>
+<footer>SkySweep32 is GPL-3.0 licensed. Use only under applicable radio, privacy, aviation, and data laws. <a href="https://github.com/bobberdolle1/SkySweep32/issues">Report reproducible defects</a> · <a href="https://github.com/bobberdolle1/SkySweep32/discussions">Ask and discuss</a>.</footer>
 </body>
 </html>

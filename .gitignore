@@ -1,24 +1,18 @@
-# PlatformIO
+# PlatformIO and IDE state
 .pio/
 .vscode/
 .clang_complete
 .gcc-flags.json
+.idea/
+*.code-workspace
 
-# Build artifacts
+# Firmware and host-test outputs
 *.bin
 *.elf
 *.hex
 *.map
 build_artifacts/
-
-# Python (hardware/enclosure/model scripts)
-__pycache__/
-*.pyc
-
-# Host unit-test binary
 test/host/test_parsers
-
-# C/C++
 *.o
 *.a
 *.so
@@ -26,22 +20,14 @@ test/host/test_parsers
 *.exe
 *.out
 
-# OS
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-*~
-
-# IDE
-*.code-workspace
-.idea/
-
-*.kicad_prl
-
-# Reproducibly fetched hardware tools and CAD intermediates
+# Python and tool caches
+__pycache__/
+*.py[cod]
 .cache/
-hardware/rev_b/freerouting-*.jar
+.pytest_cache/
+
+# CAD session, backup, and reconstructed-routing intermediates
+*.kicad_prl
 *-backups/
 *.kicad_sch-bak
 *.kicad_pcb-bak
@@ -49,3 +35,10 @@ hardware/rev_c/*.net
 hardware/rev_c/routing_input.*
 hardware/rev_c/*_placed.kicad_*
 hardware/rev_c/logs/
+
+# OS/editor temporary files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~

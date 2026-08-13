@@ -27,10 +27,6 @@ struct RuntimeConfig {
     uint32_t displayUpdateMs;
     uint32_t bleScanIntervalMs;
     
-    // LoRa
-    float loraFrequency;
-    uint8_t loraTxPower;
-    uint32_t loraTransmitIntervalMs;
     
     // GPS
     uint32_t gpsUpdateIntervalMs;
@@ -65,7 +61,6 @@ public:
     bool setWifi(const char* ssid, const char* password, bool apMode);
     bool setThresholds(uint8_t low, uint8_t med, uint8_t high, uint8_t crit);
     bool setScanInterval(uint32_t rfMs);
-    bool setLoRa(float freq, uint8_t txPower);
     
     // JSON export/import (for web API)
     String toJSON() const;

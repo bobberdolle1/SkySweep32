@@ -1,0 +1,58 @@
+name: Rev C prototype evidence
+description: Report fabrication, assembly, bring-up, measurements, or enclosure evidence
+title: "[rev-c prototype]: "
+labels: [hardware, prototype]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report facts, including failures. This template records Prototype #1
+        evidence; it does not advance project maturity by itself.
+  - type: input
+    id: revision
+    attributes:
+      label: Board revision and design commit
+      placeholder: Rev C; commit SHA
+    validations:
+      required: true
+  - type: textarea
+    id: provenance
+    attributes:
+      label: Fabrication and assembly provenance
+      placeholder: PCB fabricator, stackup, assembly method, fitted BOM substitutions, enclosure material/settings.
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Firmware and measurement setup
+      placeholder: Firmware SHA, instruments, power source, antennas/cables, stimulus frequencies/levels, calibration.
+    validations:
+      required: true
+  - type: checkboxes
+    id: areas
+    attributes:
+      label: Evidence included
+      options:
+        - label: Assembly inspection, polarity/orientation, photographs
+        - label: USB, power rails, charging, temperature
+        - label: 855–925 MHz receive response
+        - label: 2.4 GHz receive response
+        - label: 5.8 GHz receive response
+        - label: GNSS, microSD, display, controls, alerts
+        - label: Wi-Fi, BLE receive, ESP-NOW
+        - label: Enclosure assembly and service access
+  - type: textarea
+    id: results
+    attributes:
+      label: Raw results and failures
+      description: Provide measurements, logs, photos, and negative outcomes. Link externally hosted raw artifacts if necessary.
+    validations:
+      required: true
+  - type: checkboxes
+    id: truth
+    attributes:
+      label: Truthfulness
+      options:
+        - label: I distinguish measured results from assumptions and did not claim production validation.
+          required: true

@@ -1,11 +1,15 @@
 * text=auto eol=lf
 *.{cmd,[cC][mM][dD]} text eol=crlf
 *.{bat,[bB][aA][tT]} text eol=crlf
-# KiCad and FreeCAD emit AP214 STEP continuation records with trailing spaces.
-# They are tool-generated CAD syntax, not source whitespace defects.
+
+# KiCad and FreeCAD STEP continuation records contain tool-significant trailing
+# spaces; they are generated CAD syntax rather than handwritten source.
 *.step -whitespace
-*.cpp linguist-language=C++
-*.h linguist-language=C++
-*.ino linguist-language=C++
-docs/** linguist-documentation
-*.md linguist-detectable
+*.stl -whitespace
+
+# Generated contracts and reproducible CAD reports are reviewed outputs, not
+# authored product implementation for language statistics.
+src/generated/** linguist-generated=true
+hardware/rev_c/manufacturing/gerbers/** linguist-generated=true
+hardware/rev_c/validation/** linguist-generated=true
+docs/** linguist-documentation=true

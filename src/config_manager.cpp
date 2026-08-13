@@ -25,10 +25,6 @@ void ConfigManager::setDefaults() {
     cfg.displayUpdateMs = DISPLAY_UPDATE_INTERVAL_MS;
     cfg.bleScanIntervalMs = BLE_SCAN_INTERVAL_MS;
     
-    // LoRa
-    cfg.loraFrequency = LORA_FREQUENCY;
-    cfg.loraTxPower = LORA_TX_POWER;
-    cfg.loraTransmitIntervalMs = LORA_TRANSMIT_INTERVAL;
     
     // GPS
     cfg.gpsUpdateIntervalMs = GPS_UPDATE_INTERVAL;
@@ -102,10 +98,6 @@ bool ConfigManager::load() {
     if (!doc["displayMs"].isNull()) cfg.displayUpdateMs = doc["displayMs"];
     if (!doc["bleScanMs"].isNull()) cfg.bleScanIntervalMs = doc["bleScanMs"];
     
-    // LoRa
-    if (!doc["lora"]["freq"].isNull()) cfg.loraFrequency = doc["lora"]["freq"];
-    if (!doc["lora"]["txPower"].isNull()) cfg.loraTxPower = doc["lora"]["txPower"];
-    if (!doc["lora"]["intervalMs"].isNull()) cfg.loraTransmitIntervalMs = doc["lora"]["intervalMs"];
     
     // GPS
     if (!doc["gpsUpdateMs"].isNull()) cfg.gpsUpdateIntervalMs = doc["gpsUpdateMs"];
@@ -149,10 +141,6 @@ bool ConfigManager::save() {
     doc["displayMs"] = cfg.displayUpdateMs;
     doc["bleScanMs"] = cfg.bleScanIntervalMs;
     
-    // LoRa
-    doc["lora"]["freq"] = cfg.loraFrequency;
-    doc["lora"]["txPower"] = cfg.loraTxPower;
-    doc["lora"]["intervalMs"] = cfg.loraTransmitIntervalMs;
     
     // GPS
     doc["gpsUpdateMs"] = cfg.gpsUpdateIntervalMs;
@@ -197,11 +185,6 @@ bool ConfigManager::setScanInterval(uint32_t rfMs) {
     return save();
 }
 
-bool ConfigManager::setLoRa(float freq, uint8_t txPower) {
-    cfg.loraFrequency = freq;
-    cfg.loraTxPower = txPower;
-    return save();
-}
 
 String ConfigManager::toJSON() const {
     JsonDocument doc;
@@ -218,9 +201,6 @@ String ConfigManager::toJSON() const {
     doc["rfScanMs"] = cfg.rfScanIntervalMs;
     doc["displayMs"] = cfg.displayUpdateMs;
     doc["bleScanMs"] = cfg.bleScanIntervalMs;
-    
-    doc["lora"]["freq"] = cfg.loraFrequency;
-    doc["lora"]["txPower"] = cfg.loraTxPower;
     
     doc["logLevel"] = cfg.logLevel;
     
@@ -261,7 +241,6 @@ void ConfigManager::printConfig() const {
                   cfg.rssiThresholdLow, cfg.rssiThresholdMedium,
                   cfg.rssiThresholdHigh, cfg.rssiThresholdCritical);
     Serial.printf("RF Scan: %lu ms\n", cfg.rfScanIntervalMs);
-    Serial.printf("LoRa: %.1f MHz @ %d dBm\n", cfg.loraFrequency, cfg.loraTxPower);
     Serial.printf("Log Level: %d\n", cfg.logLevel);
     Serial.printf("Stealth Mode: %s\n", cfg.stealthMode ? "ON" : "OFF");
 }

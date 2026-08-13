@@ -2,901 +2,303 @@
 #include <SPI.h>
 #include <Wire.h>
 #include <U8g2lib.h>
-#include "config.h"
-#include "config_manager.h"
-#include "power_manager.h"
-#include "spi_manager.h"
-#include "activity_classifier.h"
-#include "alert_manager.h"
-#ifdef MODULE_ESPNOW
-#include "espnow_mesh.h"
-#endif
-#ifdef MODULE_ATAK
-#include "atak_client.h"
-#endif
 #include <esp_task_wdt.h>
 
-// --- Conditionally include modules ---
-#ifdef MODULE_CC1101
-#include "drivers/cc1101.h"
-#endif
-#ifdef MODULE_NRF24
-#include "drivers/nrf24l01.h"
-#endif
-#ifdef MODULE_SX1281
-#include "drivers/sx1281.h"
-#endif
-#ifdef MODULE_RX5808
-#include "drivers/rx5808.h"
-#endif
-#include "protocols/mavlink_parser.h"
-#include "protocols/crsf_parser.h"
-#ifdef MODULE_ACOUSTIC
-#include "acoustic_detector.h"
-#endif
-#ifdef MODULE_REMOTE_ID
-#include "remote_id_detector.h"
-#endif
-#ifdef MODULE_WEB_SERVER
-#include "web_server.h"
-#endif
-#ifdef MODULE_SD_CARD
+#include "activity_classifier.h"
+#include "alert_manager.h"
+#include "config.h"
+#include "config_manager.h"
 #include "data_logger.h"
-#endif
-#ifdef MODULE_GPS
+#include "drivers/cc1101.h"
+#include "drivers/rx5808.h"
+#include "drivers/sx1281.h"
+#include "espnow_mesh.h"
 #include "gps_module.h"
-#endif
-#ifdef MODULE_LORA
-#include "meshtastic_client.h"
-#endif
-#ifdef MODULE_ML
-#include "ml_classifier.h"
-#endif
-#ifdef MODULE_COMPASS
-#include "compass_module.h"
-#endif
+#include "power_manager.h"
+#include "remote_id_detector.h"
+#include "spi_manager.h"
+#include "web_server.h"
 
-// ============================================================================
-// DISPLAY
-// ============================================================================
-#ifdef MODULE_OLED
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE, PIN_I2C_SCL, PIN_I2C_SDA);
-#endif
+namespace {
 
-// ============================================================================
-// RF MODULE DRIVER INSTANCES
-// ============================================================================
-#ifdef MODULE_CC1101
-CC1101Driver cc1101(PIN_CC1101_CS);
-#endif
-#ifdef MODULE_NRF24
-NRF24L01Driver nrf24(PIN_NRF24_CS, PIN_NRF24_CE);
-#endif
-#ifdef MODULE_SX1281
-SX1281Driver sx1281;
-#endif
-#ifdef MODULE_RX5808
-#ifdef BOARD_SKYSWEEP32_REV_C
-RX5808Driver rx5808(RX5808Driver::THREE_BIT_STRAP,
-                     PIN_RX5808_CH1, PIN_RX5808_CH2,
-                     PIN_RX5808_CH3, PIN_RX5808_RSSI);
-#elif defined(BOARD_SKYSWEEP32_REV_B)
-RX5808Driver rx5808(PIN_RX5808_DATA, PIN_RX5808_CLOCK,
-                     PIN_RX5808_SELECT, PIN_RX5808_RSSI);
-#else
-RX5808Driver rx5808(PIN_RX5808_CONTROL, PIN_RX5808_RSSI);
-#endif
-#endif
-
-// Protocol Parsers
-MAVLinkParser mavlinkParser;
-CRSFParser crsfParser;
-
-// ============================================================================
-// FEATURE MODULE INSTANCES
-// ============================================================================
-ActivityClassifier activityClassifier;
-
-#ifdef MODULE_REMOTE_ID
-RemoteIDDetector remoteIDDetector;
-#endif
-#ifdef MODULE_WEB_SERVER
-SkySweepWebServer webServer;
-#endif
-#ifdef MODULE_SD_CARD
-DataLogger dataLogger;
-#endif
-#ifdef MODULE_GPS
-GPSModule gpsModule;
-#endif
-#ifdef MODULE_LORA
-MeshtasticClient meshtasticClient;
-#endif
-#ifdef MODULE_ML
-MLClassifier mlClassifier;
-#endif
-#ifdef MODULE_ACOUSTIC
-AcousticDetector acousticDetector;
-#endif
-
-// ============================================================================
-// SHARED DATA (protected by mutexes)
-// ============================================================================
+constexpr uint8_t kReceiverCount = 3;
+constexpr uint8_t kSubGhzReceiver = 0;
+constexpr uint8_t kTwoPointFourReceiver = 1;
+constexpr uint8_t kFivePointEightReceiver = 2;
 
 struct RFModuleData {
-    const char* moduleName;
-    int rssiValue;
-    bool isActive;
-    bool protocolMAVLink;
-    bool protocolCRSF;
+    const char* name;
+    int rssi;
+    bool active;
 };
 
-// RF data accessible from multiple tasks. Disabled slots remain addressable so
-// the fixed band indices used by telemetry do not drift between build profiles.
-volatile RFModuleData rfModules[3] = {
-    {"CC1101", 0, false, false, false},
-#ifdef MODULE_SX1281
-    {"SX1281", 0, false, false, false},
-#elif defined(MODULE_NRF24)
-    {"NRF24L01+", 0, false, false, false},
-#else
-    {"2.4 GHz", 0, false, false, false},
-#endif
-    {"RX5808", 0, false, false, false}
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C display(
+    U8G2_R0, U8X8_PIN_NONE, PIN_I2C_SCL, PIN_I2C_SDA);
+CC1101Driver cc1101(PIN_CC1101_CS);
+SX1281Driver sx1281;
+RX5808Driver rx5808(PIN_RX5808_CH1, PIN_RX5808_CH2, PIN_RX5808_CH3,
+                    PIN_RX5808_RSSI);
+ActivityClassifier activityClassifier;
+RemoteIDDetector remoteIDDetector;
+SkySweepWebServer webServer;
+DataLogger dataLogger;
+GPSModule gpsModule;
+
+volatile RFModuleData receivers[kReceiverCount] = {
+    {"855-925", 0, false},
+    {"2.4 GHz", 0, false},
+    {"5.8 GHz", 0, false},
 };
 
-// RSSI history for ML classifier
-int rssiHistory[RSSI_HISTORY_SIZE] = {0};
-uint8_t rssiHistoryIndex = 0;
+TaskHandle_t rfTask = nullptr;
+TaskHandle_t displayTask = nullptr;
+TaskHandle_t webTask = nullptr;
+TaskHandle_t gpsTask = nullptr;
 
-// Task handles
-TaskHandle_t taskHandleRF = NULL;
-TaskHandle_t taskHandleDisplay = NULL;
-TaskHandle_t taskHandleWeb = NULL;
-TaskHandle_t taskHandleRemoteID = NULL;
-TaskHandle_t taskHandleGPS = NULL;
-#ifdef MODULE_ATAK
-TaskHandle_t taskHandleATAK = NULL;
-#endif
-
-// ============================================================================
-// RF SCANNING TASK (Core 0)
-// ============================================================================
-
-// Returns true if the RF module at the given index (0=CC1101, 1=SX1281 or
-// legacy nRF24L01+, 2=RX5808) is compiled into this build.
-static inline bool rfModuleEnabled(uint8_t moduleIndex) {
-    switch (moduleIndex) {
-        case 0:
-            #ifdef MODULE_CC1101
-            return true;
-            #else
-            return false;
-            #endif
-        case 1:
-            #if defined(MODULE_SX1281) || defined(MODULE_NRF24)
-            return true;
-            #else
-            return false;
-            #endif
-        case 2:
-            #ifdef MODULE_RX5808
-            return true;
-            #else
-            return false;
-            #endif
-        default:
-            return false;
-    }
-}
-
-static inline bool cc1101BlankedByLocalLoRa() {
-    #if defined(MODULE_CC1101) && defined(MODULE_LORA)
-    return meshtasticClient.isTransmitRecoveryActive();
-    #else
-    return false;
-    #endif
-}
-
-int readModuleRSSI(uint8_t moduleIndex) {
-    if (moduleIndex == 2) {
-        #ifdef MODULE_RX5808
+int readReceiverRssi(uint8_t receiver) {
+    if (receiver == kFivePointEightReceiver) {
         return constrain(rx5808.scanNextChannel(), 0, 100);
-        #else
-        return 0;
-        #endif
     }
 
-    if (moduleIndex == 0 && cc1101BlankedByLocalLoRa()) {
+    if (!spiManager.acquire(pdMS_TO_TICKS(100))) {
         return 0;
     }
 
-    int rssiValue = 0;
-    if (!spiManager.acquire(pdMS_TO_TICKS(100))) return 0;
-
-    switch(moduleIndex) {
-        case 0:
-            #ifdef MODULE_CC1101
-            rssiValue = cc1101.readRSSI();
-            rssiValue = map(rssiValue, -120, -30, 0, 100);
-            #endif
-            break;
-        case 1:
-            #ifdef MODULE_SX1281
-            rssiValue = sx1281.readRSSI();
-            #elif defined(MODULE_NRF24)
-            rssiValue = nrf24.readRSSI();
-            rssiValue = map(rssiValue, -90, -40, 0, 100);
-            #endif
-            break;
+    int rssi = 0;
+    if (receiver == kSubGhzReceiver) {
+        rssi = map(cc1101.readRSSI(), -120, -30, 0, 100);
+    } else if (receiver == kTwoPointFourReceiver) {
+        rssi = sx1281.readRSSI();
     }
-
     spiManager.release();
-    return constrain(rssiValue, 0, 100);
+    return constrain(rssi, 0, 100);
 }
 
-void taskRFScanning(void* parameter) {
-    Serial.println("[TASK] RF Scanning started (Core 0)");
-    
+float receiverFrequencyMHz(uint8_t receiver) {
+    if (receiver == kSubGhzReceiver) {
+        return static_cast<float>(cc1101.getFrequency()) / 1000000.0f;
+    }
+    if (receiver == kTwoPointFourReceiver) {
+        return sx1281.getCurrentFrequencyMHz();
+    }
+    return rx5808.getCurrentFrequency();
+}
+
+void taskRFScanning(void*) {
+    Serial.println("[TASK] RF scanning started");
+    uint8_t sweepCounter = 0;
+
     for (;;) {
-        // Scan each active RF module
-        for (uint8_t i = 0; i < 3; i++) {
-            // Skip modules not compiled into this build
-            if (!rfModuleEnabled(i)) continue;
+        for (uint8_t receiver = 0; receiver < kReceiverCount; ++receiver) {
+            receivers[receiver].rssi = readReceiverRssi(receiver);
+            receivers[receiver].active = receivers[receiver].rssi > 40;
 
-            // Clear per-cycle protocol detection so it reflects the current scan
-            // instead of latching true forever after the first frame is seen.
-            rfModules[i].protocolMAVLink = false;
-            rfModules[i].protocolCRSF = false;
-
-            // Read RSSI
-            rfModules[i].rssiValue = readModuleRSSI(i);
-            rfModules[i].isActive = (rfModules[i].rssiValue > 40);
-            
-            // Store history for ML
-            rssiHistory[rssiHistoryIndex] = rfModules[i].rssiValue;
-            rssiHistoryIndex = (rssiHistoryIndex + 1) % RSSI_HISTORY_SIZE;
-            
-            // Try protocol parsing on received data
-            if (rfModules[i].isActive) {
-                uint8_t rxBuf[64];
-                uint8_t rxLen = 0;
-                
-                if (spiManager.acquire(pdMS_TO_TICKS(50))) {
-                    switch(i) {
-                        case 0:
-                            #ifdef MODULE_CC1101
-                            rxLen = cc1101.receiveData(rxBuf, sizeof(rxBuf));
-                            #endif
-                            break;
-                        case 1:
-                            #ifdef MODULE_NRF24
-                            rxLen = nrf24.receiveData(rxBuf, sizeof(rxBuf));
-                            #endif
-                            break;
-                    }
-                    spiManager.release();
-                }
-                
-                // Parse protocols
-                if (rxLen > 0) {
-                    if (mavlinkParser.parseBuffer(rxBuf, rxLen)) {
-                        rfModules[i].protocolMAVLink = true;
-                        MAVLinkPacket pkt = mavlinkParser.getPacket();
-                        Serial.printf("[PROTO] MAVLink detected on %s: %s (SysID:%d)\n",
-                                     rfModules[i].moduleName,
-                                     mavlinkParser.getMessageName(pkt.msgid),
-                                     pkt.sysid);
-                    }
-                    if (crsfParser.parseBuffer(rxBuf, rxLen)) {
-                        rfModules[i].protocolCRSF = true;
-                        CRSFPacket pkt = crsfParser.getPacket();
-                        Serial.printf("[PROTO] CRSF detected on %s: %s\n",
-                                     rfModules[i].moduleName,
-                                     crsfParser.getFrameTypeName(pkt.type));
-                    }
-                }
-            }
-            
-            // Relative activity only: normalized receiver energy is not identity,
-            // distance, intent, or evidence that a drone is present.
-            ActivityLevel activity =
-                activityClassifier.assessActivity(i, rfModules[i].rssiValue);
-
+            // This is relative receiver activity only. It never identifies a
+            // transmitter, protocol, range, intent, or aircraft.
+            const ActivityLevel activity =
+                activityClassifier.assessActivity(receiver, receivers[receiver].rssi);
             if (activity >= ACTIVITY_MEDIUM) {
-                AlertType requiredAlert =
-                    (activity == ACTIVITY_CRITICAL) ? ALERT_ACTIVITY_CRITICAL :
-                    (activity == ACTIVITY_HIGH) ? ALERT_ACTIVITY_HIGH :
-                                                  ALERT_ACTIVITY_MEDIUM;
-                if (alertManager.getCurrentAlert() < requiredAlert ||
+                const AlertType alert = activity == ACTIVITY_CRITICAL
+                                            ? ALERT_ACTIVITY_CRITICAL
+                                            : activity == ACTIVITY_HIGH
+                                                  ? ALERT_ACTIVITY_HIGH
+                                                  : ALERT_ACTIVITY_MEDIUM;
+                if (alertManager.getCurrentAlert() < alert ||
                     alertManager.getCurrentAlert() == ALERT_NONE) {
-                    alertManager.alert(requiredAlert);
+                    alertManager.alert(alert);
                 }
             }
-            
-            
-#ifdef MODULE_ESPNOW
-            // Share coarse activity with nearby SkySweep nodes. The payload
-            // deliberately carries no inferred transmitter protocol or identity.
-            if (activity >= ACTIVITY_HIGH) {
-                espNowMesh.sendActivityAlert(
-                    rfModules[i].rssiValue,
-                    i == 0 ? 2 : (i == 1 ? 3 : 4),
-                    static_cast<uint8_t>(activity),
-                    0.0f,
-                    0.0f);
-            }
-#endif
-            
-            
-            // Experimental legacy classifier remains opt-in and is forbidden by
-            // the Rev C hardware contract.
-            #ifdef MODULE_ML
-            if (activity >= ACTIVITY_HIGH) {
-                ClassificationResult mlResult = mlClassifier.classifyFromRSSI(
-                    rssiHistory, RSSI_HISTORY_SIZE,
-                    rfModules[i].protocolMAVLink,
-                    rfModules[i].protocolCRSF,
-                    rfModules[0].isActive,  // 900 MHz
-                    rfModules[1].isActive,  // 2.4 GHz
-                    rfModules[2].isActive   // 5.8 GHz
-                );
-                if (mlResult.isValid) {
-                    Serial.printf("[ML] %s (%.0f%% confidence)\n", 
-                                 mlClassifier.getClassName(mlResult.droneClass), 
-                                 mlResult.confidence * 100.0f);
-                }
-            }
-            #endif
-            
-            // Broadcast to web clients
-            #ifdef MODULE_WEB_SERVER
-            webServer.broadcastRFData(rfModules[i].moduleName, rfModules[i].rssiValue, rfModules[i].isActive);
-            #endif
-            
-            // Log detection to SD
-            #ifdef MODULE_SD_CARD
-            if (rfModules[i].isActive) {
-                float freq = (i == 0) ? 915.0f : (i == 1) ? 2400.0f : 5800.0f;
-                #ifdef MODULE_SX1281
-                if (i == 1) freq = sx1281.getCurrentFrequencyMHz();
-                #endif
-                #ifdef MODULE_RX5808
-                if (i == 2) freq = rx5808.getCurrentFrequency();
-                #endif
-                const char* proto = rfModules[i].protocolMAVLink ? "MAVLink" :
-                                    rfModules[i].protocolCRSF ? "CRSF" : "Unknown";
-                dataLogger.logRFData(rfModules[i].moduleName, rfModules[i].rssiValue, freq, proto);
-            }
-            #endif
-            
-        }
-        #ifdef MODULE_WEB_SERVER
-        {
-            const ActivityData current = activityClassifier.getCurrentActivity();
-            const char* source = current.isActive && current.moduleIndex < 3
-                                     ? rfModules[current.moduleIndex].moduleName
-                                     : "All fitted receivers";
-            webServer.broadcastActivityLevel(
-                activityClassifier.getActivityLevelString(current.level),
-                source);
-        }
-        #endif
 
-        
-        // --- Periodic multi-band sweep (every 10th cycle) ---
-        static uint8_t sweepCounter = 0;
-        if (++sweepCounter >= 10) {
+            if (activity >= ACTIVITY_HIGH) {
+                // No protocol or transmitter identity is sent between nodes.
+                espNowMesh.sendActivityAlert(receivers[receiver].rssi,
+                                              receiver == kSubGhzReceiver ? 2 : receiver == kTwoPointFourReceiver ? 3 : 4,
+                                              static_cast<uint8_t>(activity), 0.0f, 0.0f);
+            }
+
+            webServer.broadcastRFData(receivers[receiver].name, receivers[receiver].rssi,
+                                      receivers[receiver].active);
+            if (receivers[receiver].active) {
+                dataLogger.logRFData(receivers[receiver].name, receivers[receiver].rssi,
+                                     receiverFrequencyMHz(receiver), "energy");
+            }
+        }
+
+        const ActivityData current = activityClassifier.getCurrentActivity();
+        const char* source = current.isActive && current.moduleIndex < kReceiverCount
+                                 ? receivers[current.moduleIndex].name
+                                 : "All fitted receivers";
+        webServer.broadcastActivityLevel(
+            activityClassifier.getActivityLevelString(current.level), source);
+
+        // The fitted E07 / CC1101 path remains within the Rev C 855–925 MHz
+        // contract. It deliberately does not re-enable the legacy 433 MHz scan.
+        if (++sweepCounter == 10) {
             sweepCounter = 0;
-        }
-
-        #ifdef MODULE_CC1101
-        if (sweepCounter == 0 && !cc1101BlankedByLocalLoRa()) {
             if (spiManager.acquire(pdMS_TO_TICKS(100))) {
-                CC1101Driver::BandScanResult bandResult = cc1101.scanAllBands(5);
+                const CC1101Driver::BandScanResult scan = cc1101.scanAllBands(5);
                 spiManager.release();
-                
-                for (uint8_t b = 0; b < CC1101Driver::BAND_COUNT; b++) {
-                    if (bandResult.activity[b]) {
-                        Serial.printf("[SWEEP] Activity on %s: RSSI=%d\n",
-                                     b == 0 ? "433MHz" : b == 1 ? "868MHz" : "915MHz",
-                                     bandResult.rssi[b]);
+                for (uint8_t band = 0; band < CC1101Driver::BAND_COUNT; ++band) {
+                    if (scan.activity[band]) {
+                        Serial.printf("[SWEEP] sample %u RSSI=%d\n", band,
+                                      scan.rssi[band]);
                     }
                 }
             }
         }
-        #endif
-        
-        #ifdef MODULE_NRF24
-        if (sweepCounter == 5) { // Staggered from CC1101 sweep
-            if (spiManager.acquire(pdMS_TO_TICKS(100))) {
-                NRF24L01Driver::ChannelScanResult nrfScan = nrf24.scanSpectrum(20, 200);
-                spiManager.release();
-                
-                if (nrfScan.activeChannels > 10) {
-                    Serial.printf("[NRF24-SWEEP] High 2.4GHz activity: %d channels active. Peak ch%d\n",
-                                  nrfScan.activeChannels, nrfScan.peakChannel);
-                }
-            }
-        }
-        #endif
-        
-        // Power manager update (battery check)
+
         powerManager.update();
-        
         vTaskDelay(pdMS_TO_TICKS(configManager.get().rfScanIntervalMs));
     }
 }
 
-// ============================================================================
-// DISPLAY TASK (Core 1)
-// ============================================================================
+void taskDisplayUpdate(void*) {
+    Serial.println("[TASK] Display update started");
+    bool previousStealth = false;
 
-void taskDisplayUpdate(void* parameter) {
-    Serial.println("[TASK] Display update started (Core 1)");
-    
     for (;;) {
-        #ifdef MODULE_OLED
-        static bool lastStealthState = false;
-        bool currentStealth = configManager.get().stealthMode;
-        
-        #ifdef MODULE_COMPASS
-        compassModule.update();
-        #endif
-
-        
-        if (currentStealth != lastStealthState) {
-            if (currentStealth) {
-                display.clearBuffer();
-                display.sendBuffer();
-                display.setPowerSave(1);
-            } else {
-                display.setPowerSave(0);
+        const bool stealth = configManager.get().stealthMode;
+        if (stealth != previousStealth) {
+            display.setPowerSave(stealth ? 1 : 0);
+            previousStealth = stealth;
+        }
+        if (!stealth) {
+            display.clearBuffer();
+            display.setFont(u8g2_font_6x10_tr);
+            display.drawStr(0, 10, "SkySweep32 Rev C");
+            display.drawLine(0, 12, 128, 12);
+            display.setFont(u8g2_font_5x7_tr);
+            for (uint8_t receiver = 0; receiver < kReceiverCount; ++receiver) {
+                const int y = 24 + receiver * 11;
+                char row[28];
+                snprintf(row, sizeof(row), "%s: %d", receivers[receiver].name,
+                         receivers[receiver].rssi);
+                display.drawStr(0, y, row);
+                display.drawFrame(70, y - 7, 57, 8);
+                const int width = map(receivers[receiver].rssi, 0, 100, 0, 55);
+                if (width > 0) display.drawBox(71, y - 6, width, 6);
             }
-            lastStealthState = currentStealth;
-        }
-        
-        if (currentStealth) {
-            vTaskDelay(pdMS_TO_TICKS(DISPLAY_UPDATE_INTERVAL_MS));
-            continue;
-        }
-        
-        display.clearBuffer();
-        
-        // Header
-        display.setFont(u8g2_font_6x10_tr);
-        display.drawStr(0, 10, "SkySweep32");
-        
-        // Show tier
-        #ifdef TIER_BASE
-        display.drawStr(68, 10, "[BASE]");
-        #elif defined(TIER_STANDARD)
-        display.drawStr(68, 10, "[STD]");
-        #elif defined(TIER_PRO)
-        display.drawStr(68, 10, "[PRO]");
-        #endif
-        
-        #ifdef MODULE_COMPASS
-        if (compassModule.isValid()) {
-            char compBuf[16];
-            snprintf(compBuf, sizeof(compBuf), "%d\260", compassModule.getAzimuth());
-            display.drawStr(100, 10, compBuf);
-        }
-        #endif
-        
-        display.drawLine(0, 12, 128, 12);
-        
-        // Module Data
-        display.setFont(u8g2_font_5x7_tr);
-        int yPos = 24;
-        
-        for (int i = 0; i < 3; i++) {
-            // Skip modules not compiled into this build
-            if (!rfModuleEnabled(i)) continue;
-
-            char buf[32];
-            snprintf(buf, sizeof(buf), "%s:%d", rfModules[i].moduleName, rfModules[i].rssiValue);
-            display.drawStr(0, yPos, buf);
-            
-            // Signal bar
-            int barW = map(rfModules[i].rssiValue, 0, 100, 0, 55);
-            display.drawFrame(70, yPos - 7, 57, 8);
-            if (barW > 0) display.drawBox(71, yPos - 6, barW, 6);
-            
-            yPos += 11;
-        }
-        
-        // Relative activity indicator; never labels the source as a threat.
-        ActivityData activity = activityClassifier.getCurrentActivity();
-        display.setFont(u8g2_font_5x7_tr);
-        if (activity.isActive) {
-            char activityBuf[32];
-            snprintf(activityBuf, sizeof(activityBuf), "ACTIVITY: %s",
-                     activityClassifier.getActivityLevelString(activity.level));
-            display.drawStr(0, 63, activityBuf);
-        } else {
-            #ifdef MODULE_GPS
-            if (gpsModule.isFixValid()) {
-                GPSData g = gpsModule.getData();
-                char gpsBuf[32];
-                snprintf(gpsBuf, sizeof(gpsBuf), "GPS:%dsat %.4f", g.satellites, g.latitude);
-                display.drawStr(0, 63, gpsBuf);
+            const ActivityData activity = activityClassifier.getCurrentActivity();
+            if (activity.isActive) {
+                char row[32];
+                snprintf(row, sizeof(row), "ACTIVITY: %s",
+                         activityClassifier.getActivityLevelString(activity.level));
+                display.drawStr(0, 63, row);
+            } else if (gpsModule.isFixValid()) {
+                const GPSData gps = gpsModule.getData();
+                char row[32];
+                snprintf(row, sizeof(row), "GNSS: %d sat", gps.satellites);
+                display.drawStr(0, 63, row);
             } else {
                 display.drawStr(0, 63, "Scanning...");
             }
-            #else
-            display.drawStr(0, 63, "Scanning...");
-            #endif
+            display.sendBuffer();
         }
-        
-        display.sendBuffer();
-        #endif // MODULE_OLED
-        
-        vTaskDelay(pdMS_TO_TICKS(DISPLAY_UPDATE_INTERVAL_MS));
+        vTaskDelay(pdMS_TO_TICKS(configManager.get().displayUpdateMs));
     }
 }
 
-// ============================================================================
-// WEB SERVER TASK (Core 1)
-// ============================================================================
-
-#ifdef MODULE_WEB_SERVER
-void taskWebServer(void* parameter) {
-    Serial.println("[TASK] Web server started (Core 1)");
+void taskWebServer(void*) {
+    Serial.println("[TASK] Web server started");
     for (;;) {
         webServer.update();
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
-#endif
 
-// ============================================================================
-// REMOTE ID TASK (Core 0)
-// ============================================================================
-
-#ifdef MODULE_REMOTE_ID
-void taskRemoteID(void* parameter) {
-    Serial.println("[TASK] Remote ID scanning started (Core 0)");
+void taskRemoteID(void*) {
+    Serial.println("[TASK] Experimental Remote ID scanning started");
     for (;;) {
         remoteIDDetector.update();
-        
-        uint8_t droneCount = remoteIDDetector.getDetectedDroneCount();
-        for (uint8_t i = 0; i < droneCount; i++) {
-            DroneRemoteIDData drone = remoteIDDetector.getDroneData(i);
-            if (drone.isValid) {
-                #ifdef MODULE_WEB_SERVER
-                webServer.broadcastDroneDetection(drone.uasID, drone.latitude, drone.longitude, drone.altitude);
-                #endif
-                #ifdef MODULE_SD_CARD
-                dataLogger.logDroneRemoteID(drone.uasID, drone.latitude, drone.longitude, drone.altitude, drone.rssi);
-                #endif
+        const uint8_t count = remoteIDDetector.getDetectedDroneCount();
+        for (uint8_t index = 0; index < count; ++index) {
+            const DroneRemoteIDData report = remoteIDDetector.getDroneData(index);
+            if (report.isValid) {
+                webServer.broadcastDroneDetection(report.uasID, report.latitude,
+                                                  report.longitude, report.altitude);
+                dataLogger.logDroneRemoteID(report.uasID, report.latitude,
+                                             report.longitude, report.altitude,
+                                             report.rssi);
             }
         }
-        
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
-#endif
 
-// ============================================================================
-// GPS TASK (Core 1)
-// ============================================================================
-
-#ifdef MODULE_GPS
-void taskGPS(void* parameter) {
-    Serial.println("[TASK] GPS polling started (Core 1)");
+void taskGPS(void*) {
+    Serial.println("[TASK] GNSS polling started");
     for (;;) {
         gpsModule.update();
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
-#endif
 
-// ============================================================================
-// LORA MESH TASK (Core 0)
-// ============================================================================
-
-#ifdef MODULE_LORA
-void taskLoRaMesh(void* parameter) {
-    Serial.println("[TASK] LoRa mesh started (Core 0)");
-    for (;;) {
-        if (spiManager.acquire(pdMS_TO_TICKS(100))) {
-            meshtasticClient.update();
-            spiManager.release();
-        }
-        vTaskDelay(pdMS_TO_TICKS(500));
-    }
+void beginReceiver(const char* name, bool initialized) {
+    Serial.printf("[INIT] %s: %s\n", name, initialized ? "ready" : "failed");
 }
-#endif
 
-// ============================================================================
-// ATAK TASK (Core 1)
-// ============================================================================
-
-#ifdef MODULE_ATAK
-void taskATAK(void* parameter) {
-    Serial.println("[TASK] ATAK started (Core 1)");
-    for (;;) {
-        float lat = 0.0, lon = 0.0, alt = 0.0;
-        float course = 0.0;
-        #ifdef MODULE_GPS
-        if (gpsModule.isFixValid()) {
-            GPSData g = gpsModule.getData();
-            lat = g.latitude;
-            lon = g.longitude;
-            alt = g.altitude;
-        }
-        #endif
-        
-        #ifdef MODULE_COMPASS
-        if (compassModule.isValid()) {
-            course = (float)compassModule.getAzimuth();
-        }
-        #endif
-        
-        atakClient.sendHeartbeat(lat, lon, alt, course);
-        
-        vTaskDelay(pdMS_TO_TICKS(10000)); // Every 10 seconds
-    }
-}
-#endif
-
-// ============================================================================
-// ACOUSTIC DETECTION TASK (Core 0)
-// ============================================================================
-
-#ifdef MODULE_ACOUSTIC
-void taskAcoustic(void* parameter) {
-    Serial.println("[TASK] Acoustic detection started (Core 0)");
-    for (;;) {
-        acousticDetector.update();
-        if (acousticDetector.isDroneDetected()) {
-            Serial.printf("[ACOUSTIC] Drone detected! Ratio: %.6f\n", acousticDetector.getCurrentRatio());
-        }
-        vTaskDelay(pdMS_TO_TICKS(HOP_MS));
-    }
-}
-#endif
-
-// ============================================================================
-// SETUP
-// ============================================================================
+}  // namespace
 
 void setup() {
     Serial.begin(115200);
     delay(1000);
-    
-    Serial.println("\n╔══════════════════════════════════════╗");
-    Serial.println("║   SkySweep32 Passive Drone Detector  ║");
-    Serial.printf( "║   Version %-10s  %s  ║\n", SKYSWEEP_VERSION, SKYSWEEP_BUILD_DATE);
-    Serial.println("╠══════════════════════════════════════╣");
-    
-    #ifdef TIER_BASE
-    Serial.println("║   Tier: 🟢 BASE (Starter)            ║");
-    #elif defined(TIER_STANDARD)
-    Serial.println("║   Tier: 🟡 STANDARD (Hunter)         ║");
-    #elif defined(TIER_PRO)
-    Serial.println("║   Tier: 🔴 PRO (Sentinel)            ║");
-    #endif
-    
-    Serial.println("╚══════════════════════════════════════╝\n");
-    
-    // --- Initialize ConfigManager (SPIFFS) ---
-    Serial.println("[INIT] Configuration manager...");
-    configManager.begin();
-    configManager.printConfig();
-    
-    // --- Initialize Watchdog Timer ---
-    esp_task_wdt_init(30, true);  // 30s timeout, panic on trigger
-    esp_task_wdt_add(NULL);       // Add current task (setup/loop)
-    Serial.println("[INIT] Watchdog timer: 30s");
-    
-    // --- Initialize shared I2C bus before the fuel gauge and display ---
-    #if defined(MODULE_BATTERY_GAUGE) || defined(MODULE_OLED) || defined(MODULE_COMPASS)
-    Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
-    #endif
+    Serial.printf("\nSkySweep32 Rev C passive monitor %s (%s)\n", SKYSWEEP_VERSION,
+                  SKYSWEEP_BUILD_DATE);
+    Serial.println("Relative RF energy/activity observation only; no transmitter identity.");
 
-    // --- Initialize Power Manager ---
+    configManager.begin();
+    esp_task_wdt_init(30, true);
+    esp_task_wdt_add(nullptr);
+
+    Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
     powerManager.begin();
-    
-    // --- Initialize SPI Manager ---
     spiManager.begin();
-    
-    // --- Initialize OLED ---
-    #ifdef MODULE_OLED
+
     display.begin();
-    display.setFont(u8g2_font_6x10_tr);
     display.clearBuffer();
+    display.setFont(u8g2_font_6x10_tr);
     display.drawStr(0, 10, "SkySweep32");
     display.drawStr(0, 25, "Initializing...");
     display.sendBuffer();
-    Serial.println("[INIT] OLED display ready");
-    #endif
-    
-    // --- Initialize RF Modules ---
-    #ifdef MODULE_CC1101
-    Serial.println("[INIT] CC1101 (900 MHz)...");
-    if (spiManager.acquire(pdMS_TO_TICKS(1000))) {
-        if (!cc1101.begin()) Serial.println("[ERROR] CC1101 init failed");
-        spiManager.release();
-    }
-    #endif
-    
-    #ifdef MODULE_NRF24
-    Serial.println("[INIT] NRF24L01+ (2.4 GHz)...");
-    pinMode(PIN_NRF24_CE, OUTPUT);
-    if (spiManager.acquire(pdMS_TO_TICKS(1000))) {
-        if (!nrf24.begin()) Serial.println("[ERROR] NRF24 init failed");
-        spiManager.release();
-    }
-    #endif
 
-    #ifdef MODULE_SX1281
-    Serial.println("[INIT] SX1281 (2.4 GHz passive RSSI)...");
     if (spiManager.acquire(pdMS_TO_TICKS(1000))) {
-        if (!sx1281.begin()) Serial.println("[ERROR] SX1281 init failed");
+        beginReceiver("CC1101 855-925 MHz", cc1101.begin());
         spiManager.release();
     }
-    #endif
-    
-    #ifdef MODULE_RX5808
-    Serial.println("[INIT] RX5808 (5.8 GHz)...");
-    if (!rx5808.begin()) Serial.println("[ERROR] RX5808 init failed");
-    #endif
-    
-    
-    // --- Initialize Alert Manager ---
+    if (spiManager.acquire(pdMS_TO_TICKS(1000))) {
+        beginReceiver("SX1281 2.4 GHz", sx1281.begin());
+        spiManager.release();
+    }
+    beginReceiver("RX5808 5.8 GHz", rx5808.begin());
+
     alertManager.begin(true, true);
-    
-    
-    // --- Initialize Web Server (before Remote ID!) ---
-    #ifdef MODULE_WEB_SERVER
-    Serial.println("[INIT] Web Server...");
-    if (!webServer.begin(true)) {
-        Serial.println("[ERROR] Web server init failed");
+    if (webServer.begin(true)) {
+        Serial.printf("[WEB] %s\n", webServer.getIPAddress().toString().c_str());
     } else {
-        Serial.printf("[WEB] Dashboard: http://%s\n", webServer.getIPAddress().toString().c_str());
+        Serial.println("[INIT] Web server failed");
     }
-    #endif
-    
-    // --- Initialize Compass Client ---
-    #ifdef MODULE_COMPASS
-    compassModule.begin();
-    #endif
-    
-    // --- Initialize ATAK Client ---
-    #ifdef MODULE_ATAK
-    Serial.println("[INIT] ATAK Client...");
-    atakClient.begin();
-    #endif
-    
-#ifdef MODULE_ESPNOW
-    // --- Initialize ESP-NOW networking ---
-    Serial.println("[INIT] ESP-NOW Mesh...");
-    if (!espNowMesh.begin()) {
-        Serial.println("[ERROR] ESP-NOW init failed");
-    }
-#endif
-    // --- Initialize Remote ID (after WiFi is configured) ---
-    #ifdef MODULE_REMOTE_ID
-    Serial.println("[INIT] Remote ID (BLE)...");
-    if (!remoteIDDetector.begin()) {
-        Serial.println("[ERROR] Remote ID init failed");
-    }
-    #endif
-    
-    // --- Initialize SD Card Logger ---
-    #ifdef MODULE_SD_CARD
-    Serial.println("[INIT] SD Card Logger...");
-    if (!dataLogger.begin(PIN_SD_CS)) {
-        Serial.println("[ERROR] SD card init failed");
-    }
-    #endif
-    
-    // --- Initialize GPS ---
-    #ifdef MODULE_GPS
-    Serial.println("[INIT] GPS Module...");
-    if (!gpsModule.begin()) {
-        Serial.println("[ERROR] GPS init failed");
-    }
-    #endif
-    
-    // --- Initialize LoRa Mesh ---
-    #ifdef MODULE_LORA
-    Serial.println("[INIT] LoRa Mesh...");
-    if (spiManager.acquire(pdMS_TO_TICKS(1000))) {
-        if (!meshtasticClient.begin(LORA_FREQUENCY)) {
-            Serial.println("[ERROR] LoRa init failed");
-        }
-        spiManager.release();
-    }
-    #endif
-    
-    // --- Initialize ML Classifier ---
-    #ifdef MODULE_ML
-    Serial.println("[INIT] ML Classifier...");
-    mlClassifier.begin();
-    #endif
-    
-    // --- Initialize Acoustic Detector ---
-    #ifdef MODULE_ACOUSTIC
-    Serial.println("[INIT] Acoustic Detector...");
-    if (!acousticDetector.begin()) {
-        Serial.println("[ERROR] Acoustic init failed");
-    }
-    #endif
-    
-    // ===================================================================
-    // CREATE FREERTOS TASKS
-    // ===================================================================
-    
-    Serial.println("\n[SYSTEM] Creating FreeRTOS tasks...");
-    
-    // RF Scanning — Core 0, highest priority
-    xTaskCreatePinnedToCore(taskRFScanning, "RF_Scan", TASK_STACK_RF_SCAN, 
-                            NULL, TASK_PRIORITY_RF_SCAN, &taskHandleRF, 0);
-    
-    // Display — Core 1
-    #ifdef MODULE_OLED
-    xTaskCreatePinnedToCore(taskDisplayUpdate, "Display", TASK_STACK_DISPLAY, 
-                            NULL, TASK_PRIORITY_DISPLAY, &taskHandleDisplay, 1);
-    #endif
-    
-    // Web Server — Core 1
-    #ifdef MODULE_WEB_SERVER
-    xTaskCreatePinnedToCore(taskWebServer, "WebSrv", TASK_STACK_WEBSERVER, 
-                            NULL, TASK_PRIORITY_WEBSERVER, &taskHandleWeb, 1);
-    #endif
-    
-    // Remote ID — Core 0
-    #ifdef MODULE_REMOTE_ID
-    xTaskCreatePinnedToCore(taskRemoteID, "RemoteID", TASK_STACK_REMOTE_ID, 
-                            NULL, TASK_PRIORITY_REMOTE_ID, NULL, 0);
-    #endif
-    
-    // GPS — Core 1
-    #ifdef MODULE_GPS
-    xTaskCreatePinnedToCore(taskGPS, "GPS", TASK_STACK_GPS, 
-                            NULL, TASK_PRIORITY_GPS, &taskHandleGPS, 1);
-    #endif
-    
-    // LoRa Mesh — Core 0
-    #ifdef MODULE_LORA
-    xTaskCreatePinnedToCore(taskLoRaMesh, "LoRa", TASK_STACK_MESH, 
-                            NULL, TASK_PRIORITY_MESH, NULL, 0);
-    #endif
-    
-    // ATAK — Core 1
-    #ifdef MODULE_ATAK
-    xTaskCreatePinnedToCore(taskATAK, "ATAK", 4096, 
-                            NULL, 1, &taskHandleATAK, 1);
-    #endif
-    
-    // Acoustic — Core 0
-    #ifdef MODULE_ACOUSTIC
-    xTaskCreatePinnedToCore(taskAcoustic, "Acoustic", TASK_STACK_ACOUSTIC, 
-                            NULL, TASK_PRIORITY_ACOUSTIC, NULL, 0);
-    #endif
-    
-    Serial.println("[SYSTEM] All tasks started");
+    if (!espNowMesh.begin()) Serial.println("[INIT] ESP-NOW failed");
+    if (!remoteIDDetector.begin()) Serial.println("[INIT] Experimental Remote ID failed");
+    if (!dataLogger.begin(PIN_SD_CS)) Serial.println("[INIT] microSD unavailable");
+    if (!gpsModule.begin()) Serial.println("[INIT] GNSS unavailable");
+
+    xTaskCreatePinnedToCore(taskRFScanning, "RF_Scan", TASK_STACK_RF_SCAN, nullptr,
+                            TASK_PRIORITY_RF_SCAN, &rfTask, 0);
+    xTaskCreatePinnedToCore(taskDisplayUpdate, "Display", TASK_STACK_DISPLAY, nullptr,
+                            TASK_PRIORITY_DISPLAY, &displayTask, 1);
+    xTaskCreatePinnedToCore(taskWebServer, "Web", TASK_STACK_WEBSERVER, nullptr,
+                            TASK_PRIORITY_WEBSERVER, &webTask, 1);
+    xTaskCreatePinnedToCore(taskRemoteID, "RemoteID", TASK_STACK_REMOTE_ID, nullptr,
+                            TASK_PRIORITY_REMOTE_ID, nullptr, 0);
+    xTaskCreatePinnedToCore(taskGPS, "GNSS", TASK_STACK_GPS, nullptr,
+                            TASK_PRIORITY_GPS, &gpsTask, 1);
+
     Serial.printf("[SYSTEM] Free heap: %d bytes\n", ESP.getFreeHeap());
-    Serial.println("═══════════════════════════════════════\n");
 }
 
-// ============================================================================
-// LOOP (minimal — tasks handle everything)
-// ============================================================================
-
 void loop() {
-    // Keep watchdog fed
     esp_task_wdt_reset();
-    
-    // Fast non-blocking updates
     alertManager.update();
-#ifdef MODULE_ESPNOW
     espNowMesh.update();
-#endif
-    
-    // Yield to FreeRTOS tasks
     vTaskDelay(pdMS_TO_TICKS(10));
 }

@@ -1,0 +1,46 @@
+name: Proposal
+description: Propose an evidence-backed improvement to SkySweep32
+title: "[proposal]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        SkySweep32 is a passive monitoring system. Rev C is frozen for Prototype
+        #1 except for a demonstrated defect. Discuss broad ideas first when they
+        would change the electrical, RF, power, or enclosure architecture.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or measured need
+      description: What user/engineering problem exists? Link measurements or reports where possible.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome and alternatives
+      description: Describe the user-observable outcome, trade-offs, and alternatives considered.
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Area
+      options: [Firmware, Rev C hardware, Enclosure, Documentation/site, Tooling/CI, Future architecture]
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and validation plan
+      description: Name required hardware, measurements, test fixtures, data, or contracts. A compile alone is not RF/mechanical proof.
+  - type: checkboxes
+    id: boundary
+    attributes:
+      label: Passive and maturity boundary
+      options:
+        - label: This proposal does not add RF jamming, injection, deauthentication, GPS denial, or transmitter identity claims from RSSI.
+          required: true
+        - label: I will not describe an unmeasured outcome as production validated.
+          required: true

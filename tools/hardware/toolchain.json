@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "kicad": {
+    "required_major": 10,
+    "validated_version": "10.0.5",
+    "cli": "kicad-cli"
+  },
+  "freecad": {
+    "minimum_version": "1.0.0",
+    "python_modules": ["FreeCAD", "Part"]
+  },
+  "python": {
+    "minimum_version": "3.11",
+    "packages": {
+      "kicad-sch-api": "0.5.6"
+    }
+  }
+}

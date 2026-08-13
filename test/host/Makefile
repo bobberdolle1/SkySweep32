@@ -1,4 +1,4 @@
-# Host-side unit tests for the protocol parsers and pure hardware protocols.
+# Host-side unit tests for pure parser and activity-classification logic.
 #
 # These compile real source headers and parser implementations against a minimal
 # Arduino.h stub with a desktop compiler + AddressSanitizer. No ESP32 toolchain

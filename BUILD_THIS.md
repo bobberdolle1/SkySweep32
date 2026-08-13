@@ -1,29 +1,51 @@
 # Build the current SkySweep32
 
-**Current hardware: Rev C.** It is ready for its first physical prototype, not
-production validated.
+This is the short route for the only current hardware/firmware combination:
+**SkySweep32 Rev C passive monitor**.
 
-Start with the detailed [Rev C build guide](hardware/rev_c/BUILD.md). It is the
-canonical fabrication and assembly procedure; this page only routes to the
-current files.
+> **READY FOR FIRST PHYSICAL PROTOTYPE — NOT PRODUCTION VALIDATED.** Reproduce
+> the checks below before fabrication. A successful check does not replace
+> Prototype #1 electrical, RF, mechanical, or compliance evidence.
 
-## Current Rev C files
+## 1. Inspect the exact hardware package
 
-- [Detailed build guide](hardware/rev_c/BUILD.md)
-- [Gerber and drill package](hardware/rev_c/manufacturing/skysweep32_rev_c_gerbers.zip)
-- [Fitted BOM](hardware/rev_c/manufacturing/bom_fitted.csv)
-- [Non-PCB assembly items](hardware/rev_c/manufacturing/assembly_items.csv)
-- [Enclosure CAD and print files](hardware/rev_c/enclosure/)
-- [Canonical firmware target](README.md#firmware-compatibility):
-  `esp32s3_rev_c_passive`
-- [Assembly and bring-up](hardware/rev_c/ASSEMBLY_AND_BRINGUP.md)
-- [Physical validation checklist](hardware/rev_c/PROTOTYPE_VALIDATION_CHECKLIST.md)
+Read [`hardware/rev_c/BUILD.md`](hardware/rev_c/BUILD.md). It is the canonical
+order/assembly route, including the fitted BOM, Gerbers, drill data, assembly
+items, enclosure, bringing-up procedure, and physical validation checklist.
 
-> **Do not mix revisions.** Rev A, Rev B, and public `v0.6.1` binaries are
-> incompatible with Rev C. Do not use their PCB files, BOMs, enclosure files,
-> pin maps, wiring guides, or firmware binaries for this build.
+Do not use Rev A/Rev B assets or the historical `v0.6.1` binaries.
 
-Before purchase, run the current electrical, mechanical, fabrication, and
-firmware checks specified by the [detailed guide](hardware/rev_c/BUILD.md).
-A successful CAD/build check does not replace the first-board measurements in
-the [physical validation checklist](hardware/rev_c/PROTOTYPE_VALIDATION_CHECKLIST.md).
+## 2. Reproduce design evidence
+
+```bash
+python tools/development/generate_rev_c_pinmap.py --check
+python tools/development/generate_dashboard.py --check
+python tools/hardware/rev_c/verify_schematic_parity.py
+python tools/hardware/verify.py
+```
+
+The last command requires KiCad 10 and FreeCAD. It recreates engineering
+artifacts from native sources; it is not a physical validation claim.
+
+## 3. Build firmware
+
+```bash
+pio run -e esp32s3_rev_c_passive
+make -C test/host
+```
+
+After an actual assembled-board bring-up, upload with:
+
+```bash
+pio run -e esp32s3_rev_c_passive --target upload
+```
+
+## 4. Record prototype evidence
+
+Run every applicable item in
+[`hardware/rev_c/PROTOTYPE_VALIDATION_CHECKLIST.md`](hardware/rev_c/PROTOTYPE_VALIDATION_CHECKLIST.md).
+Record measurements, setup, raw logs, photographs, firmware SHA, and failures in
+the hardware-build issue template. Do not relabel Rev C as production-validated
+until that evidence exists.
+
+For architecture, features, and software, start at [`docs/en/README.md`](docs/en/README.md) or [`docs/ru/README.md`](docs/ru/README.md).

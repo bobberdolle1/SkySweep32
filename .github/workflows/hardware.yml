@@ -2,34 +2,32 @@ name: Rev C Hardware Gates
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [master]
     paths:
       - 'hardware/**'
+      - 'tools/hardware/**'
+      - 'tools/development/generate_rev_c_pinmap.py'
+      - 'tools/development/generate_dashboard.py'
       - 'boards/skysweep32_rev_c.json'
-      - 'scripts/generate_rev_c_pinmap.py'
       - 'src/generated/hardware_rev_c.h'
       - '.github/workflows/hardware.yml'
   pull_request:
-    branches: [ master ]
-    paths:
-      - 'hardware/**'
-      - 'boards/skysweep32_rev_c.json'
-      - 'scripts/generate_rev_c_pinmap.py'
-      - 'src/generated/hardware_rev_c.h'
-      - '.github/workflows/hardware.yml'
+    branches: [master]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   cad-contracts:
+    name: cad-contracts
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - uses: actions/checkout@v4
-
       - name: Install pinned CAD dependencies
         run: |
           sudo add-apt-repository --yes ppa:kicad/kicad-10.0-releases
@@ -37,10 +35,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes kicad freecad
           python -m pip install kicad-sch-api==0.5.6
-
-      - name: Rebuild electrical, mechanical, and fabrication evidence
-        run: python hardware/verify.py --skip-firmware --skip-renders
-
+      - name: Rebuild electrical mechanical and fabrication evidence
+        run: python tools/hardware/verify.py --skip-firmware --skip-renders
       - name: Upload engineering reports
         if: always()
         uses: actions/upload-artifact@v4

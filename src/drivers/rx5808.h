@@ -3,84 +3,47 @@
 
 #include <Arduino.h>
 #include "../config.h"
-#include "rx5808_protocol.h"
 
 #ifdef MODULE_RX5808
 
-// RX5808 Frequency Bands (5.8 GHz)
-#define RX5808_BAND_A   0
-#define RX5808_BAND_B   1
-#define RX5808_BAND_E   2
-#define RX5808_BAND_F   3
-#define RX5808_BAND_R   4
+// Rev C fits the documented 12-pad RX5808 module in three-bit strap mode.
+// It can observe only its eight hardware-selected Band-E channels.
+#define RX5808_BAND_E 2
 
-// Channel definitions per band (8 channels each)
 struct RX5808Channel {
     uint8_t band;
     uint8_t channel;
-    uint16_t frequency; // MHz
+    uint16_t frequency;  // MHz
 };
 
 class RX5808Driver {
-public:
-    enum ControlMode {
-        RTC6715_SERIAL,
-        THREE_BIT_STRAP,
-    };
-
 private:
-    ControlMode controlMode;
-    uint8_t dataPin;
-    uint8_t clockPin;
-    uint8_t selectPin;
+    uint8_t channel1Pin;
+    uint8_t channel2Pin;
+    uint8_t channel3Pin;
     uint8_t rssiPin;
-    uint8_t currentBand;
     uint8_t currentChannel;
     bool initialized;
     bool scanStarted;
-    
-    void writeFrame(uint32_t frame);
-    uint16_t getFrequencyForChannel(uint8_t band, uint8_t channel);
-    
+
+    uint16_t frequencyForChannel(uint8_t channel) const;
+
 public:
-    RX5808Driver(ControlMode mode, uint8_t pin1, uint8_t pin2,
-                 uint8_t pin3, uint8_t rssiAnalogPin);
-    RX5808Driver(uint8_t dataPin, uint8_t clockPin, uint8_t selectPin,
+    RX5808Driver(uint8_t channel1Pin, uint8_t channel2Pin, uint8_t channel3Pin,
                  uint8_t rssiAnalogPin);
-    // Legacy Rev A compatibility: begin() fails explicitly because its
-    // one-pin pseudo-interface cannot clock the RTC6715 protocol.
-    RX5808Driver(uint8_t legacyControlPin, uint8_t rssiAnalogPin);
-    
+
     bool begin();
-    void setChannel(uint8_t band, uint8_t channel);
+    void setChannel(uint8_t channel);
     void setFrequency(uint16_t frequencyMHz);
-    
-    int readRSSI(); // Returns 0-100 percentage
-    // Strap mode sweeps the eight manufacturer-defined Band-E channels;
-    // modified serial modules retain the legacy 40-channel sweep.
+
+    int readRSSI();       // Relative 0–100 display value; not calibrated power.
     int scanNextChannel();
-    int readRSSIRaw(); // Returns raw ADC value (0-4095)
-    
-    void scanBand(uint8_t band, int* rssiValues);
+    int readRSSIRaw();
+
+    void scanBand(int* rssiValues);
     RX5808Channel findStrongestChannel();
-    
-    uint16_t getCurrentFrequency();
-    const char* getBandName(uint8_t band);
+    uint16_t getCurrentFrequency() const;
 };
 
-// Frequency table for all bands
-static const uint16_t RX5808_FREQ_TABLE[5][8] = {
-    // Band A (Boscam A)
-    {5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725},
-    // Band B (Boscam B)
-    {5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866},
-    // Band E (Boscam E / DJI)
-    {5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945},
-    // Band F (Fatshark / IRC)
-    {5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880},
-    // Band R (Raceband)
-    {5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917}
-};
-
-#endif // MODULE_RX5808
-#endif // RX5808_H
+#endif  // MODULE_RX5808
+#endif  // RX5808_H

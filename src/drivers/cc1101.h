@@ -68,7 +68,6 @@
 #define CC1101_SXOFF        0x32
 #define CC1101_SCAL         0x33
 #define CC1101_SRX          0x34
-#define CC1101_STX          0x35
 #define CC1101_SIDLE        0x36
 #define CC1101_SWOR         0x38
 #define CC1101_SPWD         0x39
@@ -107,17 +106,14 @@ public:
     void setModulation(uint8_t modulation);
     void setDataRate(uint32_t baud);
     void setChannel(uint8_t channel);
-    void setPowerLevel(uint8_t power);
     
     void setRxMode();
-    void setTxMode();
     void setIdleMode();
     
     int8_t readRSSI();
     uint8_t getLQI();
     bool isCarrierDetected();
     
-    void transmitData(uint8_t* data, uint8_t length);
     uint8_t receiveData(uint8_t* buffer, uint8_t maxLength);
     
     void flushRxFIFO();
@@ -127,22 +123,24 @@ public:
     bool isConnected();
     uint32_t getFrequency() const { return currentFrequency; }
     
-    // --- Frequency Band Profiles ---
+    // Rev C's fitted E07 / CC1101 path is limited to 855–925 MHz. These are
+    // coarse energy-observation sample points, not protocol-specific channels.
     enum FreqBand {
-        BAND_433 = 0,    // 433 MHz ISM (EU/Asia)
-        BAND_868 = 1,    // 868 MHz ISM (EU)
-        BAND_915 = 2,    // 915 MHz ISM (US/AU)
+        BAND_860 = 0,
+        BAND_890 = 1,
+        BAND_920 = 2,
         BAND_COUNT = 3
     };
-    
+
     void setBand(FreqBand band);
-    
-    // Sweep scan: cycle through all bands, read RSSI per band
+
     struct BandScanResult {
         int8_t rssi[BAND_COUNT];
-        bool   activity[BAND_COUNT];
+        bool activity[BAND_COUNT];
     };
     BandScanResult scanAllBands(uint16_t dwellMs = 5);
+
+    // Sweep only within the fitted 855–925 MHz receive contract.
     
     // Spectrum scan: sweep frequency range with given step
     void spectrumScan(uint32_t startHz, uint32_t endHz, uint32_t stepHz,

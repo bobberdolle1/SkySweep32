@@ -52,7 +52,6 @@ bool CC1101Driver::begin() {
     writeRegister(CC1101_FSCAL1, 0x00);
     writeRegister(CC1101_FSCAL0, 0x1F);
     
-    setPowerLevel(0xC0); // Max power
     
     initialized = true;
     setRxMode();
@@ -107,14 +106,16 @@ uint8_t CC1101Driver::readStatusRegister(uint8_t address) {
 }
 
 void CC1101Driver::setFrequency(uint32_t frequencyHz) {
-    // Calculate frequency registers
-    // FREQ = (Desired Frequency * 2^16) / 26 MHz
+    if (frequencyHz < 855000000 || frequencyHz > 925000000) {
+        Serial.printf("[CC1101] Refusing out-of-contract frequency %u Hz\n", frequencyHz);
+        return;
+    }
+
+    // FREQ = desired frequency * 2^16 / 26 MHz.
     uint32_t freq = (frequencyHz * 65536ULL) / 26000000ULL;
-    
     writeRegister(CC1101_FREQ2, (freq >> 16) & 0xFF);
     writeRegister(CC1101_FREQ1, (freq >> 8) & 0xFF);
     writeRegister(CC1101_FREQ0, freq & 0xFF);
-    
     currentFrequency = frequencyHz;
     Serial.printf("[CC1101] Frequency set to %u Hz\n", frequencyHz);
 }
@@ -151,17 +152,11 @@ void CC1101Driver::setChannel(uint8_t channel) {
     writeRegister(CC1101_CHANNR, channel);
 }
 
-void CC1101Driver::setPowerLevel(uint8_t power) {
-    writeRegister(CC1101_PATABLE, power);
-}
 
 void CC1101Driver::setRxMode() {
     sendStrobe(CC1101_SRX);
 }
 
-void CC1101Driver::setTxMode() {
-    sendStrobe(CC1101_STX);
-}
 
 void CC1101Driver::setIdleMode() {
     sendStrobe(CC1101_SIDLE);
@@ -190,24 +185,6 @@ bool CC1101Driver::isCarrierDetected() {
     return (pktstatus & 0x10) != 0; // CCA bit
 }
 
-void CC1101Driver::transmitData(uint8_t* data, uint8_t length) {
-    setIdleMode();
-    flushTxFIFO();
-    
-    digitalWrite(chipSelectPin, LOW);
-    spiInstance->transfer(CC1101_TXFIFO | 0x40); // Burst write
-    spiInstance->transfer(length);
-    for (uint8_t i = 0; i < length; i++) {
-        spiInstance->transfer(data[i]);
-    }
-    digitalWrite(chipSelectPin, HIGH);
-    
-    setTxMode();
-    
-    // Wait for transmission to complete
-    delay((length * 8 * 1000) / 250000 + 5);
-    setRxMode();
-}
 
 uint8_t CC1101Driver::receiveData(uint8_t* buffer, uint8_t maxLength) {
     uint8_t rxBytes = readStatusRegister(CC1101_RXBYTES);
@@ -253,15 +230,15 @@ bool CC1101Driver::isConnected() {
     return (version != 0x00 && version != 0xFF);
 }
 
-// --- Multi-Band Support ---
+// --- Rev C sub-GHz receive contract ---
 
 static const uint32_t BAND_FREQUENCIES[] = {
-    433920000,  // 433.92 MHz — EU/Asia ISM
-    868000000,  // 868.0 MHz  — EU ISM
-    915000000   // 915.0 MHz  — US/AU ISM
+    860000000,
+    890000000,
+    920000000,
 };
 
-static const char* BAND_NAMES[] = {"433MHz", "868MHz", "915MHz"};
+static const char* BAND_NAMES[] = {"860MHz", "890MHz", "920MHz"};
 
 void CC1101Driver::setBand(FreqBand band) {
     if (band >= BAND_COUNT) return;
@@ -304,6 +281,10 @@ CC1101Driver::BandScanResult CC1101Driver::scanAllBands(uint16_t dwellMs) {
 
 void CC1101Driver::spectrumScan(uint32_t startHz, uint32_t endHz, uint32_t stepHz,
                                  int8_t* rssiOut, uint16_t maxPoints, uint16_t dwellMs) {
+    if (startHz < 855000000 || endHz > 925000000 || startHz > endHz || stepHz == 0) {
+        Serial.println("[CC1101] Refusing out-of-contract spectrum scan");
+        return;
+    }
     uint16_t idx = 0;
     uint32_t saved = currentFrequency;  // setFrequency() in the loop overwrites currentFrequency
     

@@ -9,7 +9,6 @@
 
 #include "crsf_parser.h"
 #include "mavlink_parser.h"
-#include "rx5808_protocol.h"
 #include "activity_classifier.h"
 
 #include <cstdio>
@@ -358,38 +357,6 @@ static void testParseHelpers() {
     }
 }
 
-static void testRX5808Protocol() {
-    printf("RX5808 RTC6715 protocol:\n");
-
-    const uint32_t raceband1Payload = rx5808_protocol::synthPayload(5658);
-    const uint32_t raceband1Frame = rx5808_protocol::synthWriteFrame(5658);
-    CHECK(raceband1Payload == 0x281DUL,
-          "5658 MHz divider must match the RTC6715 reference formula");
-    CHECK(raceband1Frame == 0x503B1UL,
-          "5658 MHz must encode address, write bit and payload LSB-first");
-    CHECK(rx5808_protocol::synthPayload(5865) == 0x2A05UL,
-          "5865 MHz divider must match the RTC6715 reference formula");
-    CHECK(rx5808_protocol::synthWriteFrame(5865) == 0x540B1UL,
-          "5865 MHz write frame must match the reference bitstream");
-
-    CHECK(rx5808_protocol::frameBit(raceband1Frame, 0),
-          "wire bit 0 must be synth-register address bit 0");
-    CHECK(!rx5808_protocol::frameBit(raceband1Frame, 1) &&
-          !rx5808_protocol::frameBit(raceband1Frame, 2) &&
-          !rx5808_protocol::frameBit(raceband1Frame, 3),
-          "wire bits 1..3 must complete address 0x1");
-    CHECK(rx5808_protocol::frameBit(raceband1Frame, 4),
-          "wire bit 4 must select a register write");
-
-    uint32_t rebuilt = 0;
-    for (uint8_t bit = 0; bit < rx5808_protocol::kFrameBitCount; ++bit) {
-        if (rx5808_protocol::frameBit(raceband1Frame, bit)) {
-            rebuilt |= (1UL << bit);
-        }
-    }
-    CHECK(rebuilt == raceband1Frame,
-          "25 sequential LSB-first wire bits must reconstruct the frame");
-}
 
 // Deterministic PRNG (xorshift32) so the fuzz run is reproducible — no time or
 // std::random seeding, same sequence every build.
@@ -470,7 +437,6 @@ int main() {
     testCRSF();
     testMAVLink();
     testParseHelpers();
-    testRX5808Protocol();
     testActivityClassification();
     testFuzz();
     printf("\n%d passed, %d failed\n", g_pass, g_fail);

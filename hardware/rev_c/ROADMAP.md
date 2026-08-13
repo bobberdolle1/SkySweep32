@@ -1,122 +1,44 @@
-# SkySweep32 Rev C Roadmap
+# Rev C evidence roadmap
 
-**Current maturity: READY_FOR_FIRST_PROTOTYPE — NOT PRODUCTION VALIDATED.**
+**Baseline:** electrical and mechanical architecture is frozen for Prototype #1.
+Do not create Rev C.1 or Rev D merely because a CAD rendering could look prettier.
+Change Rev C only for a demonstrated electrical, mechanical, manufacturability,
+or safety defect.
 
-SkySweep32 is a passive RSSI/activity monitor. This roadmap sequences work by
-physical evidence; it does not authorize a design change before the evidence
-that would justify it.
+## Prototype #1 — required before any maturity advance
 
-## Current
+- Confirm every fitted MPN, polarity, orientation, and assembly outcome.
+- Measure USB, battery/charger, 3.3 V and 5 V rails under representative load;
+  record thermal behavior and charge safety observations.
+- Characterize 855–925 MHz, 2.4 GHz, and 5.8 GHz inputs with documented sources,
+  antenna configurations, frequency points, levels, RSSI response and false
+  activity behavior. Do not claim sensitivity/selectivity without measurements.
+- Verify GNSS, microSD, OLED, buttons, alerts, Wi-Fi Web UI, BLE receive, and
+  ESP-NOW. Record range/coexistence instead of assuming it.
+- Print the enclosure and prove assembly, USB/battery/SD access, display fit,
+  antenna cable routing, fastener/boss clearance, retention, and removal.
+- Record raw results and failures with firmware SHA and build provenance.
 
-### Rev C — Prototype #1
+The target maturity after successful physical work is **PROTOTYPE_ASSEMBLED**,
+then **BENCH_TESTED** only for the measured functions. It is not production
+validation.
 
-The architecture is frozen. The next engineering truth must come from physical
-measurements, recorded with the
-[prototype validation checklist](PROTOTYPE_VALIDATION_CHECKLIST.md).
+## Possible improvements — evidence required first
 
-Required validation:
+- RF: measured antenna matching, receiver dynamic range/selectivity, front-end
+  filtering, shielding, isolation, and calibration only after a repeatable test setup exists.
+- Power: efficiency, switchable 5 V rail, thermal margins, battery gauge and
+  charging behavior after measured load profiles.
+- Mechanics: enclosure refinement, harness/antenna service, dimensional changes,
+  and optional compact variants after a printed/assembled baseline.
+- System: multi-node event correlation only with timestamped test data.
 
-- power, charging, rails, thermals, and runtime;
-- 855–925 MHz RF response;
-- SX1281 2.4 GHz sweep and self-interference;
-- RX5808 5.8 GHz response;
-- GNSS, microSD, OLED, controls, and local web functions;
-- enclosure, connectors, battery, and cable fit.
+## Explicit future directions
 
-CAD/build gates do not satisfy these physical tests.
-
-## Next
-
-### Rev C.1 — Evidence-driven refinement
-
-Rev C.1 is possible **only after physical Rev C testing**. It may address:
-
-- actual electrical fixes;
-- RF isolation;
-- antenna placement;
-- an optional external 2.4 GHz connector, if measurements justify it;
-- RX5808 improvements;
-- power efficiency;
-- a switchable 5 V rail, if useful;
-- enclosure and assembly refinements;
-- size reduction where evidence permits.
-
-Do not create Rev C.1 merely because CAD can look prettier.
-
-## Compact variant
-
-### Possible future SkySweep32 Mini
-
-A compact derivative is possible only after full Rev C functionality is
-physically proven. Potential goals are a smaller PCB and battery, reduced
-connector set, optional omission of subsystems, and a smaller enclosure.
-
-This is a derivative, not a reason to compromise Prototype #1.
-
-## 5.8 GHz video
-
-**Current Rev C: RSSI/activity only.**
-
-A future experimental path is deliberately staged:
-
-1. expose RX5808 `VIDEO OUT` to an external monitor and verify analog video;
-2. prototype a CVBS decoder separately;
-3. evaluate ESP32-S3 capture feasibility;
-4. determine display and web bandwidth requirements;
-5. only then evaluate an integrated CVBS decoder, secondary MCU, ESP32-P4, or
-   another video-capable processor.
-
-Do not migrate compute platforms before experimental evidence establishes a
-requirement.
-
-## Mesh
-
-### Stage 1: ESP-NOW
-
-Use ESP-NOW between SkySweep32 devices for possible timestamped detection
-sharing, node GNSS positions, a centralized dashboard, and multi-node event
-correlation.
-
-### Stage 2: optional external LoRa/Meshtastic-class expansion
-
-LoRa remains excluded from the Rev C motherboard. Optional future expansion is
-not canonical Rev C hardware and does not imply Meshtastic protocol
-compatibility.
-
-## Remote ID
-
-Experimental until tested with known-compliant transmitters or captured frames.
-No ASTM/ASD-STAN conformance claim is valid before that evidence exists.
-
-## TinyML
-
-No feature claim until all of the following exist:
-
-- a real dataset;
-- reproducible training;
-- a real model;
-- recorded metrics;
-- physical validation.
-
-## Rev D
-
-Rev D is justified only by a major evidence-driven architectural change, such
-as video becoming a core feature, experimentally demonstrated ESP32-S3
-insufficiency, a fundamentally changed RF frontend, manufacturing evidence
-requiring major integration, or a fundamental requirement revealed by real
-users.
-
-Rev D is **not** justified by prettier CAD, a newer MCU existing, AI preference,
-or theoretical optimization.
-
-## Maturity sequence
-
-```text
-READY_FOR_FIRST_PROTOTYPE
-→ PROTOTYPE_ASSEMBLED
-→ POWER_VALIDATED
-→ FUNCTIONALLY_BENCH_TESTED
-→ RF_CHARACTERIZED
-→ FIELD_TESTED
-→ PRODUCTION_CANDIDATE
-```
+- An external LoRa-class transport may be evaluated after a protocol, power,
+  coexistence, regulatory and user requirement are defined. It is not fitted to Rev C.
+- 5.8 GHz analog-video/CVBS work requires a distinct documented receive/demodulation experiment.
+- TinyML requires a real dataset, reproducible training, model artifact, metrics,
+  and physical validation; placeholder bytes are not a feature.
+- Mini, Rev D, and production-candidate hardware need measured requirements and
+  a separate architecture decision.

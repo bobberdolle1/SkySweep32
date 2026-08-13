@@ -1,87 +1,35 @@
-name: PlatformIO CI
+name: Firmware CI
 
 on:
   push:
-    branches: [ master, develop ]
-    tags:
-      - 'v*'
+    branches: [master]
+    paths:
+      - 'src/**'
+      - 'boards/skysweep32_rev_c.json'
+      - 'platformio.ini'
+      - 'tools/development/**'
+      - '.github/workflows/platformio.yml'
   pull_request:
-    branches: [ master ]
+    branches: [master]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build:
+  build-rev-c:
+    name: build-rev-c
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Cache PlatformIO
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.platformio
-          .pio
-        key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
-        restore-keys: |
-          ${{ runner.os }}-pio-
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install PlatformIO
-      run: |
-        python -m pip install --upgrade pip
-        pip install platformio
-
-    - name: Build Release Tiers
-      run: |
-        pio run -e esp32dev_base
-        pio run -e esp32dev_standard
-        pio run -e esp32dev_pro
-
-    - name: Build Canonical Rev C Passive Target
-      run: |
-        python scripts/generate_rev_c_pinmap.py --check
-        pio run -e esp32s3_rev_c_passive
-
-
-    - name: Compile-check Legacy Rev B Target
-      run: |
-        python scripts/generate_rev_b_pinmap.py --check
-        pio run -e esp32s3_rev_b_pro
-    - name: Compile-check Optional Modules
-      # Not shipped as a release binary — this only guards the ATAK / Compass /
-      # Acoustic / GPS code paths against bit-rot since no release tier enables them.
-      run: pio run -e esp32dev_full
-
-    - name: Prepare legacy DevKit release artifacts
-      if: startsWith(github.ref, 'refs/tags/v')
-      run: |
-        mkdir -p build_artifacts
-        cp .pio/build/esp32dev_base/firmware.bin build_artifacts/Legacy_ESP32DevKit_Starter_${{ github.ref_name }}.bin
-        cp .pio/build/esp32dev_standard/firmware.bin build_artifacts/Legacy_ESP32DevKit_Hunter_${{ github.ref_name }}.bin
-        cp .pio/build/esp32dev_pro/firmware.bin build_artifacts/Legacy_ESP32DevKit_Sentinel_${{ github.ref_name }}.bin
-        printf '%s\n' 'Legacy ESP32 DevKit firmware only. Do not flash on Rev C; build Rev C with pio run -e esp32s3_rev_c_passive.' > build_artifacts/README-LEGACY-FIRMWARE.txt
-
-    - name: Create legacy-firmware release
-      if: startsWith(github.ref, 'refs/tags/v')
-      uses: softprops/action-gh-release@v2
-      with:
-        name: Legacy ESP32 DevKit firmware ${{ github.ref_name }}
-        body: |
-          These binaries target historical ESP32 DevKit tier wiring only.
-          They are incompatible with the canonical Rev C ESP32-S3 hardware.
-          Build Rev C from source with `pio run -e esp32s3_rev_c_passive`.
-        files: |
-          build_artifacts/Legacy_ESP32DevKit_Starter_${{ github.ref_name }}.bin
-          build_artifacts/Legacy_ESP32DevKit_Hunter_${{ github.ref_name }}.bin
-          build_artifacts/Legacy_ESP32DevKit_Sentinel_${{ github.ref_name }}.bin
-          build_artifacts/README-LEGACY-FIRMWARE.txt
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PlatformIO
+        run: python -m pip install --upgrade platformio
+      - name: Verify generated firmware contracts
+        run: |
+          python tools/development/generate_rev_c_pinmap.py --check
+          python tools/development/generate_dashboard.py --check
+      - name: Build canonical Rev C firmware
+        run: pio run -e esp32s3_rev_c_passive

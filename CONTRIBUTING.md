@@ -1,110 +1,60 @@
 # Contributing to SkySweep32
 
-Thank you for your interest in contributing! SkySweep32 is an open-source project and welcomes contributions of all kinds.
+SkySweep32 is an open-source **passive multi-band RF monitoring system**. The
+current physical design is Rev C, **ready for its first physical prototype, not
+production validated**. Contributions must preserve the distinction between
+source that builds and behavior demonstrated on a real board.
 
-## 🚀 How to Contribute
+## Before opening a pull request
 
-### 1. Bug Reports & Feature Requests
-
-- Use [GitHub Issues](https://github.com/bobberdolle1/SkySweep32/issues)
-- Include your hardware tier (Base/Standard/Pro), firmware version, and serial output
-- For bugs: describe expected vs actual behavior
-
-### 2. Code Contributions
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Make your changes following the conventions below
-4. Run the host tests and static analysis (see below); test on real hardware if possible
-5. Submit a Pull Request
-
-#### Running tests locally
-
-The pure-logic protocol parsers have host unit tests that need only a desktop
-compiler (no ESP32 toolchain):
+1. Read the [system documentation](docs/en/system.md) and the relevant
+   [Rev C hardware package](hardware/rev_c/README.md).
+2. Keep the change focused. Do not mix a hardware redesign, feature expansion,
+   generated artifacts, and documentation rewrite in one change.
+3. Run the applicable checks:
 
 ```bash
-make -C test/host        # g++ + AddressSanitizer/UBSan, runs the suite
-cppcheck --enable=warning --std=c++11 -I src -I src/drivers -I src/protocols src
+python tools/development/generate_rev_c_pinmap.py --check
+python tools/development/generate_dashboard.py --check
+python tools/development/verify_docs_links.py
+make -C test/host
+pio run -e esp32s3_rev_c_passive
 ```
 
-Both also run in CI. When you add or change a protocol parser (or any pure-logic
-code that decodes external input), please add a case under `test/host/`.
+For a real Rev C electrical/mechanical change, also run
+`python tools/hardware/verify.py` with the documented KiCad/FreeCAD toolchain.
+On Windows use WSL for the sanitizer-backed host test suite; see
+[`test/host/README.md`](test/host/README.md).
 
-### 3. Documentation
+## Firmware
 
-- Fix typos, improve explanations, add examples
-- Translate to new languages
-- Create tutorials or video guides
+- `hardware/rev_c/hardware_manifest.json` is the fitted-part/pin authority.
+  Regenerate rather than hand-edit `src/generated/hardware_rev_c.h`.
+- Use the one active PlatformIO environment: `esp32s3_rev_c_passive`.
+- Every SPI user must coordinate through `spiManager`.
+- Treat BLE, Wi-Fi, protocol frames, serial data, and log filenames as untrusted.
+- Add a deterministic host test when changing a pure parser or another observable
+  boundary. Do not add source-text, incidental-default, or fake-hardware tests.
 
-### 4. Hardware Testing
+## Hardware and enclosure
 
-- Test with different ESP32 variants (DevKit V1, ESP32-S3, WROOM)
-- Report range and detection accuracy
-- Share antenna comparison results
+Use exact MPNs, manufacturer references, and native KiCad sources. Do not claim
+that an envelope STEP model is manufacturer CAD. Do not move Rev C for cosmetic
+reasons before Prototype #1 measurements. Report actual assembly, power, RF,
+GNSS, UI, network, and mechanical evidence using the hardware-build issue template.
 
----
+## Documentation and translations
 
-## 📐 Code Conventions
+English and Russian documentation are first-class and must agree on status and
+capability boundaries. Update the source-of-truth document, not a duplicated
+claim. Run `python tools/development/verify_docs_links.py` after changing docs
+or the GitHub Pages site.
 
-### C++
+## Scope and legal boundary
 
-- Use `camelCase` for variables and functions
-- Use `PascalCase` for classes
-- Use `UPPER_SNAKE_CASE` for `#define` constants
-- Include module guard: `#ifdef MODULE_*` ... `#endif`
-- Use config.h for all pin definitions and constants
-- Always use `spiManager.acquire()` / `spiManager.release()` for SPI access
+Do not submit jamming, injection, deauthentication, GPS-denial, transmitter
+identity-from-RSSI, or placeholder TinyML features. The ESP32-S3's ordinary
+Wi-Fi/BLE/ESP-NOW networking remains an experimental product function and must
+be described honestly. Follow applicable spectrum, privacy, aviation, and data laws.
 
-### File Structure
-
-```
-src/
-├── config.h              # Central configuration
-├── config_manager.h/cpp  # Runtime JSON config
-├── spi_manager.h/cpp     # Thread-safe SPI
-├── main.cpp              # FreeRTOS task setup
-├── web_server.h/cpp      # Dashboard + API
-├── drivers/              # Hardware drivers
-│   ├── cc1101.h/cpp
-│   ├── nrf24l01.h/cpp
-│   └── rx5808.h/cpp
-├── protocols/            # Protocol parsers
-│   ├── mavlink_parser.h/cpp
-│   └── crsf_parser.h/cpp
-└── [module].h/cpp        # Feature modules
-```
-
-### Commit Messages
-
-Use conventional commits:
-```
-feat: add 433 MHz CC1101 support
-fix: resolve SPI bus contention on RX5808
-docs: update wiring diagram for Pro tier
-refactor: extract RSSI history to separate class
-```
-
----
-
-## 🔬 Priority Contribution Areas
-
-1. **RF Signature Database** — Record real drone signals and share datasets
-2. **TFLite Model Training** — Train classification models on real data
-3. **ESP-NOW Mesh** — Implement multi-node communication
-4. **Web Dashboard UX** — Improve mobile responsiveness, add map view
-5. **3D Enclosure** — Design printable cases for each tier
-6. **Translations** — Add Chinese, Spanish, German docs
-7. **CI/CD** — GitHub Actions for automated builds on all tiers
-
----
-
-## ⚖️ Legal Notice
-
-> ⚠️ **Do NOT submit code that enables illegal RF jamming or GPS spoofing without explicit authorization safeguards.** All countermeasure code must be gated behind `ENABLE_COUNTERMEASURES` and include appropriate warnings.
-
----
-
-## 📜 License
-
-By contributing, you agree that your contributions will be licensed under the [GPL-3.0 License](LICENSE).
+By contributing, you license your work under [GPL-3.0](LICENSE).

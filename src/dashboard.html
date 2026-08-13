@@ -155,15 +155,24 @@ function initMap(){
     mapReady=true;
   }catch(e){console.log('Map init deferred')}
 }
+function remoteIdPopup(id, alt) {
+  const box=document.createElement('div');
+  const name=document.createElement('strong');
+  name.textContent=id||'Unknown';
+  const altitude=document.createElement('div');
+  altitude.textContent='Alt: '+(alt||0).toFixed(0)+'m';
+  box.append(name,altitude);
+  return box;
+}
 function updateMapDrone(id,lat,lon,alt){
   if(!mapReady||!lat||!lon)return;
   const key='d_'+id;
   if(droneMarkers[key]){
     droneMarkers[key].setLatLng([lat,lon]);
-    droneMarkers[key].setPopupContent('<b>'+id+'</b><br>Alt: '+(alt||0).toFixed(0)+'m');
+    droneMarkers[key].setPopupContent(remoteIdPopup(id,alt));
   }else{
     const icon=L.divIcon({className:'',html:'<div style="width:14px;height:14px;background:#58a6ff;border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px #58a6ff"></div>',iconSize:[14,14],iconAnchor:[7,7]});
-    droneMarkers[key]=L.marker([lat,lon],{icon:icon}).addTo(map).bindPopup('<b>'+id+'</b><br>Alt: '+(alt||0).toFixed(0)+'m');
+    droneMarkers[key]=L.marker([lat,lon],{icon:icon}).addTo(map).bindPopup(remoteIdPopup(id,alt));
     map.setView([lat,lon],15);
   }
 }
@@ -174,7 +183,9 @@ function updateMapOperator(id,lat,lon){
     droneMarkers[key].setLatLng([lat,lon]);
   }else{
     const icon=L.divIcon({className:'',html:'<div style="width:10px;height:10px;background:#d29922;border:2px solid #fff;border-radius:50%"></div>',iconSize:[10,10],iconAnchor:[5,5]});
-    droneMarkers[key]=L.marker([lat,lon],{icon:icon}).addTo(map).bindPopup('Operator: '+id);
+    const label=document.createElement('span');
+    label.textContent='Operator: '+(id||'Unknown');
+    droneMarkers[key]=L.marker([lat,lon],{icon:icon}).addTo(map).bindPopup(label);
   }
 }
 try{initMap()}catch(e){}
@@ -182,7 +193,7 @@ try{initMap()}catch(e){}
 <script>
 const WS_URL='ws://'+location.hostname+':80/ws';
 let ws,reconTimer,detections=0;
-const moduleMap={CC1101:0,'SX1281':1,RX5808:2};
+const moduleMap={'855-925':0,'2.4 GHz':1,'5.8 GHz':2};
 function connect(){
   ws=new WebSocket(WS_URL);
   ws.onopen=()=>{document.getElementById('connStatus').className='status ok';document.getElementById('connStatus').textContent=' Подключено';addLog('Успешное подключение к SkySweep32','det')};
@@ -216,12 +227,17 @@ function handleMsg(d){
     detections++;
     document.getElementById('detCount').textContent=detections;
     const list=document.getElementById('droneList');
-    if(detections===1)list.innerHTML='';
+    if(detections===1)list.replaceChildren();
     const item=document.createElement('div');
     item.className='drone-item';
-    item.innerHTML='<span class="id">'+d.id+'</span><span>'+
-      (d.lat?d.lat.toFixed(4)+', '+d.lon.toFixed(4):'Нет GPS')+'</span><span>'+
-      (d.alt?d.alt.toFixed(0)+'м':'')+'</span>';
+    const id=document.createElement('span');
+    id.className='id';
+    id.textContent=d.id||'Unknown';
+    const position=document.createElement('span');
+    position.textContent=d.lat ? d.lat.toFixed(4)+', '+d.lon.toFixed(4) : 'Нет GPS';
+    const altitude=document.createElement('span');
+    altitude.textContent=d.alt ? d.alt.toFixed(0)+'м' : '';
+    item.append(id,position,altitude);
     list.prepend(item);
     addLog('Получено Remote ID: '+d.id,'det');
     updateMapDrone(d.id,d.lat,d.lon,d.alt);
@@ -239,14 +255,17 @@ function handleMsg(d){
     }
     if(d.modules){
       const ml=document.getElementById('moduleList');
-      ml.innerHTML=d.modules.map(m=>'<span class="module-badge '+(m.on?'on':'off')+'">'+m.name+'</span>').join('');
-      const sd = d.modules.find(m => m.name === 'SD');
+      ml.replaceChildren(...d.modules.map(m=>{
+        const badge=document.createElement('span');
+        badge.className='module-badge '+(m.on?'on':'off');
+        badge.textContent=m.name;
+        return badge;
+      }));
+      const sd = d.modules.find(m => m.name === 'microSD');
       const sdc = document.getElementById('sdCardLogsCard');
-      if (sd && sd.on && sdc) {
-        if (sdc.style.display === 'none') {
-          sdc.style.display = 'block';
-          loadSDLogs();
-        }
+      if (sd && sd.on && sdc && sdc.style.display === 'none') {
+        sdc.style.display = 'block';
+        loadSDLogs();
       }
     }
   }
@@ -258,8 +277,15 @@ function formatUptime(s){
 }
 function addLog(msg,cls){
   const el=document.getElementById('actLog');
-  const t=new Date().toLocaleTimeString();
-  el.innerHTML='<div><span class="time">['+t+']</span> <span class="'+(cls||'')+'">'+msg+'</span></div>'+el.innerHTML;
+  const row=document.createElement('div');
+  const time=document.createElement('span');
+  time.className='time';
+  time.textContent='['+new Date().toLocaleTimeString()+'] ';
+  const message=document.createElement('span');
+  message.className=cls||'';
+  message.textContent=msg;
+  row.append(time,message);
+  el.prepend(row);
   if(el.children.length>100)el.removeChild(el.lastChild);
 }
 connect();
@@ -306,167 +332,42 @@ function uploadFirmware() {
   xhr.send(formData);
 }
 
-let sdLogsLoaded = false;
 function loadSDLogs() {
   const list = document.getElementById('sdLogsList');
   if (!list) return;
-  list.innerHTML = '<div style="color:#8b949e;text-align:center;padding:12px">Загрузка списка...</div>';
+  list.textContent = 'Загрузка списка...';
   fetch('/api/logs')
     .then(r => r.json())
     .then(files => {
       sdLogsLoaded = true;
       if (!files || !files.length) {
-        list.innerHTML = '<div style="color:#8b949e;text-align:center;padding:12px">Нет файлов логов</div>';
+        list.textContent = 'Нет файлов логов';
         return;
       }
-      list.innerHTML = files.map(f => {
-        const sz = f.size > 1024*1024 ? (f.size/(1024*1024)).toFixed(2)+' MB' : (f.size/1024).toFixed(1)+' KB';
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px;border-bottom:1px solid #21262d;gap:8px">
-          <span style="color:#58a6ff;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;flex:1;text-align:left" title="${f.name}">${f.name}</span>
-          <span style="color:#8b949e;font-size:11px;min-width:60px;text-align:right">${sz}</span>
-          <a href="/api/logs/download?file=${encodeURIComponent(f.name)}" download style="background:#238636;color:white;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px;text-decoration:none;font-weight:bold;display:inline-block">Скачать</a>
-        </div>`;
-      }).join('');
+      list.replaceChildren(...files.map(f => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:4px;border-bottom:1px solid #21262d;gap:8px';
+        const name = document.createElement('span');
+        name.style.cssText = 'color:#58a6ff;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;flex:1;text-align:left';
+        name.textContent = f.name;
+        name.title = f.name;
+        const size = document.createElement('span');
+        size.style.cssText = 'color:#8b949e;font-size:11px;min-width:60px;text-align:right';
+        size.textContent = f.size > 1024*1024 ? (f.size/(1024*1024)).toFixed(2)+' MB' : (f.size/1024).toFixed(1)+' KB';
+        const download = document.createElement('a');
+        download.href = '/api/logs/download?file=' + encodeURIComponent(f.name);
+        download.download = '';
+        download.textContent = 'Скачать';
+        download.style.cssText = 'background:#238636;color:white;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px;text-decoration:none;font-weight:bold;display:inline-block';
+        row.append(name, size, download);
+        return row;
+      }));
     })
-    .catch(err => {
-      list.innerHTML = '<div style="color:#f85149;text-align:center;padding:12px">Ошибка загрузки</div>';
+    .catch(() => {
+      list.textContent = 'Ошибка загрузки';
     });
 }
 
-/* Konami Code Anti-Theft Watermark */
-(function() {
-  const styles = `
-    #easter-egg-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #000;
-      color: #0f0;
-      font-family: monospace;
-      z-index: 9999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-    }
-    #easter-egg-overlay canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-      opacity: 0.35;
-    }
-    .egg-terminal {
-      background: #050505;
-      border: 2px solid #0f0;
-      box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
-      padding: 30px;
-      border-radius: 8px;
-      text-align: center;
-      max-width: 600px;
-      width: 90%;
-      line-height: 1.6;
-      animation: crt-flicker 0.15s infinite;
-      z-index: 100;
-    }
-    @keyframes crt-flicker {
-      0% { opacity: 0.98; }
-      50% { opacity: 1; }
-      100% { opacity: 0.99; }
-    }
-  `;
-  
-  const styleSheet = document.createElement("style");
-  styleSheet.innerText = styles;
-  document.head.appendChild(styleSheet);
-  
-  const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-  let konamiIndex = 0;
-  let matrixInterval;
-  
-  document.addEventListener('keydown', (e) => {
-    if (e.key === konamiCode[konamiIndex]) {
-      konamiIndex++;
-      if (konamiIndex === konamiCode.length) {
-        triggerEasterEgg();
-        konamiIndex = 0;
-      }
-    } else {
-      konamiIndex = 0;
-    }
-    
-    if (e.key === 'Escape') {
-      const overlay = document.getElementById('easter-egg-overlay');
-      if (overlay) overlay.style.display = 'none';
-    }
-  });
-  
-  function triggerEasterEgg() {
-    let overlay = document.getElementById('easter-egg-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'easter-egg-overlay';
-      overlay.innerHTML = `
-        <canvas id="matrix-canvas"></canvas>
-        <div class="egg-terminal">
-          <h2 style="color:#0f0;font-size:22px;margin-bottom:15px;font-family:monospace;"> SKYSWEEP32 SECURITY WATERMARK</h2>
-          <pre style="text-align:left;font-size:12px;white-space:pre-wrap;word-break:break-all;color:#0f0;">
-======================================================
-            [SECURITY AUDIT PASSED]
-======================================================
-Project: SkySweep32
-Original Author: bobberdolle1
-GitHub: https://github.com/bobberdolle1/SkySweep32
-
-WATERMARK ACTIVE: This is the original, authorized 
-distribution. If you paid money for this software 
-or pre-assembled device, you have been scammed. 
-
-SkySweep32 is 100% free and open-source under the 
-GNU General Public License v3.0. Build it yourself for free.
-======================================================
-Press ESC to return to dashboard.
-          </pre>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-      
-      const canvas = document.getElementById("matrix-canvas");
-      const ctx = canvas.getContext("2d");
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/%=<>!&|";
-      const fontSize = 16;
-      const columns = canvas.width / fontSize;
-      const rainDrops = Array(Math.floor(columns)).fill(1);
-      
-      function drawMatrix() {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#0f0";
-        ctx.font = fontSize + "px monospace";
-        for (let i = 0; i < rainDrops.length; i++) {
-          const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-          ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
-          if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-            rainDrops[i] = 0;
-          }
-          rainDrops[i]++;
-        }
-      }
-      window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      });
-      matrixInterval = setInterval(drawMatrix, 30);
-    }
-    overlay.style.display = 'flex';
-  }
-})();
 
 </script>
 </body>

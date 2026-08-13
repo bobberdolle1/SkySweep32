@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="580" viewBox="0 0 1200 580" role="img" aria-labelledby="title desc">
+  <title id="title">SkySweep32 passive monitoring system</title>
+  <desc id="desc">Three passive RF observation paths feed an ESP32-S3 core, then local logging, position, UI, alerts and experimental node events.</desc>
+  <style>
+    text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;fill:#e8eef7}.label{font-size:16px;font-weight:700}.sub{font-size:13px;fill:#a6b5c8}.small{font-size:12px;fill:#a6b5c8}.box{fill:#101d2d;stroke:#2a405a;stroke-width:2}.rf{fill:#102b36;stroke:#4dd4e8}.core{fill:#172d44;stroke:#67d69b;stroke-width:3}.out{fill:#2d2514;stroke:#ffca62}.line{stroke:#4dd4e8;stroke-width:3;fill:none;marker-end:url(#arrow)}
+  </style>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#4dd4e8"/></marker></defs>
+  <rect width="1200" height="580" fill="#08111d" rx="18"/>
+  <text x="50" y="62" font-size="28" font-weight="700">SkySweep32: passive observations to local evidence</text>
+  <text x="50" y="90" class="sub">Relative energy/activity only — no transmitter identity, demodulation, bearing, or active RF operation.</text>
+  <g transform="translate(55 145)">
+    <rect class="box rf" x="0" y="0" width="240" height="86" rx="12"/><text class="label" x="20" y="35">855–925 MHz</text><text class="sub" x="20" y="59">E07 / CC1101 RSSI</text>
+    <rect class="box rf" x="0" y="120" width="240" height="86" rx="12"/><text class="label" x="20" y="155">2.4 GHz</text><text class="sub" x="20" y="179">E28 / SX1281 RSSI</text>
+    <rect class="box rf" x="0" y="240" width="240" height="86" rx="12"/><text class="label" x="20" y="275">5.8 GHz</text><text class="sub" x="20" y="299">RX5808 analog RSSI</text>
+  </g>
+  <path class="line" d="M295 188 H425"/><path class="line" d="M295 308 H425"/><path class="line" d="M295 428 H425"/>
+  <g transform="translate(430 180)">
+    <rect class="box core" x="0" y="0" width="330" height="260" rx="16"/><text x="24" y="42" font-size="25" font-weight="700">ESP32-S3 Rev C core</text>
+    <text class="label" x="24" y="84">Acquisition + activity processing</text><text class="label" x="24" y="119">GNSS timing / location</text><text class="label" x="24" y="154">microSD logging</text><text class="label" x="24" y="189">Local UI + alert output</text><text class="label" x="24" y="224">Wi-Fi / BLE / ESP-NOW</text>
+  </g>
+  <path class="line" d="M760 230 H880"/><path class="line" d="M760 310 H880"/><path class="line" d="M760 390 H880"/>
+  <g transform="translate(885 145)">
+    <rect class="box out" x="0" y="0" width="260" height="86" rx="12"/><text class="label" x="20" y="35">Local evidence</text><text class="sub" x="20" y="59">OLED · microSD · Web UI</text>
+    <rect class="box out" x="0" y="120" width="260" height="86" rx="12"/><text class="label" x="20" y="155">Local response</text><text class="sub" x="20" y="179">buttons · buzzer · vibration</text>
+    <rect class="box out" x="0" y="240" width="260" height="86" rx="12"/><text class="label" x="20" y="275">Experimental sharing</text><text class="sub" x="20" y="299">ESP-NOW coarse events</text>
+  </g>
+  <text class="small" x="55" y="535">Current maturity: ready for first physical prototype. Hardware and build checks do not prove RF, power, compliance, or field performance.</text>
+</svg>

@@ -286,41 +286,25 @@ void SkySweepWebServer::update() {
         doc["pwrMode"] = powerManager.getModeName();
         doc["estMin"] = powerManager.getEstimatedRuntimeMinutes();
         
-        // Module status
         JsonArray modules = doc["modules"].to<JsonArray>();
-        
-        #ifdef MODULE_CC1101
-        JsonObject m0 = modules.add<JsonObject>(); m0["name"] = "CC1101"; m0["on"] = true;
-        #endif
-        #ifdef MODULE_NRF24
-        JsonObject m1 = modules.add<JsonObject>(); m1["name"] = "NRF24"; m1["on"] = true;
-        #endif
-        #ifdef MODULE_RX5808
-        JsonObject m2 = modules.add<JsonObject>(); m2["name"] = "RX5808"; m2["on"] = true;
-        #endif
-        #ifdef MODULE_GPS
-        JsonObject m3 = modules.add<JsonObject>(); m3["name"] = "GPS"; m3["on"] = true;
-        #else
-        JsonObject m3 = modules.add<JsonObject>(); m3["name"] = "GPS"; m3["on"] = false;
-        #endif
-        #ifdef MODULE_SD_CARD
-        JsonObject m4 = modules.add<JsonObject>(); m4["name"] = "SD"; m4["on"] = true;
-        #else
-        JsonObject m4 = modules.add<JsonObject>(); m4["name"] = "SD"; m4["on"] = false;
-        #endif
-        #ifdef MODULE_LORA
-        JsonObject m5 = modules.add<JsonObject>(); m5["name"] = "LoRa"; m5["on"] = true;
-        #else
-        JsonObject m5 = modules.add<JsonObject>(); m5["name"] = "LoRa"; m5["on"] = false;
-        #endif
-        #ifdef MODULE_REMOTE_ID
-        JsonObject m6 = modules.add<JsonObject>(); m6["name"] = "RemoteID"; m6["on"] = true;
-        #endif
-        #ifdef MODULE_ACOUSTIC
-        JsonObject m7 = modules.add<JsonObject>(); m7["name"] = "Acoustic"; m7["on"] = true;
-        #else
-        JsonObject m7x = modules.add<JsonObject>(); m7x["name"] = "Acoustic"; m7x["on"] = false;
-        #endif
+        JsonObject subGhz = modules.add<JsonObject>();
+        subGhz["name"] = "E07 / CC1101 855-925";
+        subGhz["on"] = true;
+        JsonObject twoPointFour = modules.add<JsonObject>();
+        twoPointFour["name"] = "E28 / SX1281 2.4";
+        twoPointFour["on"] = true;
+        JsonObject fivePointEight = modules.add<JsonObject>();
+        fivePointEight["name"] = "RX5808 5.8";
+        fivePointEight["on"] = true;
+        JsonObject gnss = modules.add<JsonObject>();
+        gnss["name"] = "GNSS";
+        gnss["on"] = true;
+        JsonObject storage = modules.add<JsonObject>();
+        storage["name"] = "microSD";
+        storage["on"] = true;
+        JsonObject remoteId = modules.add<JsonObject>();
+        remoteId["name"] = "Remote ID (experimental)";
+        remoteId["on"] = true;
         
         String output;
         serializeJson(doc, output);
@@ -329,7 +313,8 @@ void SkySweepWebServer::update() {
 }
 
 void SkySweepWebServer::handleRoot(AsyncWebServerRequest* request) {
-    AsyncWebServerResponse* response = request->beginResponse_P(200, "text/html", DASHBOARD_HTML_GZ, DASHBOARD_HTML_GZ_LEN);
+    AsyncWebServerResponse* response =
+        request->beginResponse(200, "text/html", DASHBOARD_HTML_GZ, DASHBOARD_HTML_GZ_LEN);
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
 }
@@ -342,13 +327,7 @@ void SkySweepWebServer::handleAPI(AsyncWebServerRequest* request) {
     doc["chipModel"] = ESP.getChipModel();
     doc["cpuFreqMHz"] = ESP.getCpuFreqMHz();
     
-    #ifdef TIER_BASE
-    doc["tier"] = "Base (Starter)";
-    #elif defined(TIER_STANDARD)
-    doc["tier"] = "Standard (Hunter)";
-    #elif defined(TIER_PRO)
-    doc["tier"] = "Pro (Sentinel)";
-    #endif
+    doc["profile"] = "Rev C passive monitor";
     
     String output;
     serializeJson(doc, output);
