@@ -5,10 +5,10 @@
 | Check | Command/result | Disposition |
 |---|---|---|
 | Schematic ERC | `kicad-cli sch erc --exit-code-violations ... skysweep32_rev_c1.kicad_sch` | **PASS — 0 violations.** The Rev C.1 `fp-lib-table` was corrected to reference `SkySweep32RevC1.pretty`; the prior five library warnings therefore no longer mask ERC. |
-| PCB DRC | `kicad-cli pcb drc --exit-code-violations ... skysweep32_rev_c1.kicad_pcb` | **FAIL — inherited board has 16 violations and 7 unconnected items.** Includes antenna-notch edge-clearance conflict, disconnected GND copper, dangling GND vias and silkscreen clipped by the notch. No DRC-clean claim is permitted. |
+| PCB DRC | `kicad-cli pcb drc --exit-code-violations ... skysweep32_rev_c1.kicad_pcb` | **FAIL — inherited board has 11 violations and 7 unconnected items.** Includes antenna-notch edge-clearance conflict, disconnected GND copper, dangling GND vias and silkscreen clipped by the notch. The parent Rev C PCB also reports seven violations/seven unconnected items under the same KiCad version; Rev C.1 adds the notch-derived conflicts. No DRC-clean claim is permitted. |
 | Board render | `kicad-cli pcb render ...` | Completed. The inspected render confirms the new top-edge notch but also confirms that the PCB is still the Rev C placement/routing with no 5.x detector, video, SkyPort or compacted regulator clusters. |
 | Firmware contract | `python tools/development/generate_rev_c1_pinmap.py --check` | **PASS.** The declared detector, analog-video and SkyPort GPIO allocation is unique and excludes ESP32-S3 reserved pins. |
-| Firmware build | `pio run -e esp32s3_rev_c1_detector` | **PASS — 49.14 s.** This proves the generated board/profile contract and current firmware compile together. It is not evidence that the pre-fabrication PCB implements those signals. |
+| Firmware build | `pio run -e esp32s3_rev_c1_detector` | **PASS — 9.68 s after the final observation-log/dashboard update.** This proves the generated board/profile contract and current firmware compile together. It is not evidence that the pre-fabrication PCB implements those signals. |
 
 ## Key evidence
 
