@@ -41,13 +41,31 @@ physically transmit-capable devices. Firmware configuration alone is not a
 regulatory authorization. Contributors must preserve the passive observation
 profile and comply with local radio, privacy, aviation, and data law.
 
-### Security-relevant interfaces
+### Local web server trust model
+
+Rev C starts a WPA2-protected AP with a per-device random password generated at
+first boot and retained in SPIFFS. The OLED and controlled USB serial console
+show that credential only when it is generated. A factory reset removes the
+stored configuration; the next boot generates and displays a replacement.
+
+The dashboard and `/api/status` are intentionally readable by clients already
+admitted to that AP. Management and sensitive log routes require HTTP Basic
+authentication with username `admin` and the per-device AP password:
+
+- **read-only:** `/`, `/api/status`, WebSocket telemetry;
+- **state-mutating:** configuration update/reset and power policy selection;
+- **sensitive:** SD log list/download, because logs can contain GNSS data.
+
+There is no canonical network OTA/update route. Prototype #1 firmware updates
+use native USB. Future OTA requires authenticated management, per-device
+credentials, a firmware signature/authenticity strategy, and an explicit
+secure-boot/rollback decision.
 
 Treat BLE/Wi-Fi/RF parser input as untrusted. Relevant reports include:
 
 - malformed packets causing memory corruption, reset loops, or resource
   exhaustion;
-- unauthenticated web, configuration, logging, or OTA paths;
+- bypass of management authorization, path traversal, or arbitrary file access;
 - leakage of stored GNSS observations, logs, or network credentials;
 - malicious firmware, dependency, manufacturing, or component substitutions.
 

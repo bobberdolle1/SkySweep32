@@ -5,7 +5,7 @@ on:
     branches: [master]
     paths:
       - 'src/**'
-      - 'test/**'
+      - 'tools/development/verify_prototype1_security.py'
       - 'platformio.ini'
       - '.github/workflows/host-tests.yml'
   pull_request:
@@ -23,6 +23,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build and run parser tests with ASan/UBSan
         run: make -C test/host
+      - name: Reject Prototype #1 security regressions
+        run: python tools/development/verify_prototype1_security.py
 
   static-analysis:
     name: static-analysis

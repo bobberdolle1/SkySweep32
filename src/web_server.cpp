@@ -2,7 +2,6 @@
 
 #ifdef MODULE_WEB_SERVER
 
-#include <Update.h>
 #include "config_manager.h"
 #include "power_manager.h"
 #ifdef MODULE_SD_CARD
@@ -25,53 +24,40 @@
 // SkySweepWebServer Implementation
 // ============================================================================
 
-SkySweepWebServer::SkySweepWebServer() 
+SkySweepWebServer::SkySweepWebServer()
     : httpServer(nullptr), webSocket(nullptr), isRunning(false), lastBroadcastTime(0) {
-    strncpy(config.ssid, WIFI_AP_SSID, sizeof(config.ssid));
-    strncpy(config.password, WIFI_AP_PASSWORD, sizeof(config.password));
-    config.apMode = true;
+    managementPassword[0] = '\0';
 }
 
 SkySweepWebServer::~SkySweepWebServer() {
     stop();
 }
 
-// Tracks whether the most recent OTA upload actually wrote & verified firmware,
-// so the POST response never reports success (and reboots) on an empty/failed
-// upload. Update.hasError() alone is false in both the success and never-started
-// cases, so a dedicated flag set during the upload is required.
-static bool s_otaSuccess = false;
-
-bool SkySweepWebServer::begin(bool accessPointMode) {
-    config.apMode = accessPointMode;
-    
-    // Setup WiFi
-    if (config.apMode) {
-        #ifdef MODULE_REMOTE_ID
-        // AP+STA mode for simultaneous Remote ID scanning
-        WiFi.mode(WIFI_AP_STA);
-        #else
-        WiFi.mode(WIFI_AP);
-        #endif
-        
-        WiFi.softAP(config.ssid, config.password, WIFI_AP_CHANNEL, 0, WIFI_MAX_CLIENTS);
-        Serial.printf("[WEB] AP started: %s (IP: %s)\n", config.ssid, WiFi.softAPIP().toString().c_str());
-    } else {
-        WiFi.mode(WIFI_STA);
-        WiFi.begin(config.ssid, config.password);
-        
-        uint8_t attempts = 0;
-        while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-            delay(500);
-            attempts++;
-        }
-        
-        if (WiFi.status() != WL_CONNECTED) {
-            Serial.println("[WEB] WiFi connection failed, falling back to AP mode");
-            WiFi.mode(WIFI_AP);
-            WiFi.softAP(config.ssid, config.password);
-        }
+bool SkySweepWebServer::requireManagementAuth(AsyncWebServerRequest* request) const {
+    if (request->authenticate(WEB_MANAGEMENT_USERNAME, managementPassword)) {
+        return true;
     }
+    request->requestAuthentication("SkySweep32 management");
+    return false;
+}
+
+bool SkySweepWebServer::configureNetwork() {
+    const RuntimeConfig& runtime = configManager.get();
+    strlcpy(managementPassword, runtime.wifiPassword, sizeof(managementPassword));
+    WiFi.mode(WIFI_AP);
+    if (!WiFi.softAP(runtime.wifiSSID, runtime.wifiPassword, runtime.wifiChannel, 0,
+                     WIFI_MAX_CLIENTS)) {
+        Serial.println("[WEB] Failed to start AP");
+        return false;
+    }
+    powerManager.applyWiFiPolicy();
+    Serial.printf("[WEB] AP started: %s (IP: %s)\n", runtime.wifiSSID,
+                  WiFi.softAPIP().toString().c_str());
+    return true;
+}
+
+bool SkySweepWebServer::begin() {
+    if (!configureNetwork()) return false;
     
     // Create HTTP server and WebSocket
     httpServer = new AsyncWebServer(WEB_SERVER_PORT);
@@ -99,54 +85,59 @@ bool SkySweepWebServer::begin(bool accessPointMode) {
     });
     
     #ifdef MODULE_SD_CARD
-    httpServer->on("/api/logs", HTTP_GET, [](AsyncWebServerRequest* request) {
-        if (!SD.exists("/logs")) {
-            request->send(200, "application/json", "[]");
-            return;
-        }
-        File root = SD.open("/logs");
-        if (!root || !root.isDirectory()) {
-            request->send(500, "application/json", "{\"status\":\"error\",\"msg\":\"Could not open logs directory\"}");
-            return;
-        }
-        String json = "[";
-        File file = root.openNextFile();
-        bool first = true;
-        while (file) {
-            if (!file.isDirectory()) {
-                if (!first) json += ",";
-                json += "{\"name\":\"" + String(file.name()) + "\",\"size\":" + String(file.size()) + "}";
-                first = false;
-            }
-            file.close();
-            file = root.openNextFile();
-        }
-        root.close();
-        json += "]";
-        request->send(200, "application/json", json);
-    });
-    
-    httpServer->on("/api/logs/download", HTTP_GET, [](AsyncWebServerRequest* request) {
-        if (request->hasParam("file")) {
-            String filename = request->getParam("file")->value();
-            // Reject path-traversal / separator characters before building the path.
-            if (filename.indexOf("..") >= 0 || filename.indexOf('/') >= 0 ||
-                filename.indexOf('\\') >= 0 || filename.indexOf('\r') >= 0 ||
-                filename.indexOf('\n') >= 0) {
-                request->send(400, "application/json", "{\"status\":\"error\",\"msg\":\"Invalid filename\"}");
+    // Logs can contain GNSS observations. They are sensitive and require the
+    // same per-device management credential as configuration changes.
+    httpServer->on("/api/logs", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        if (!requireManagementAuth(request)) return;
+        JsonDocument doc;
+        JsonArray files = doc.to<JsonArray>();
+        if (SD.exists("/logs")) {
+            File root = SD.open("/logs");
+            if (!root || !root.isDirectory()) {
+                request->send(500, "application/json",
+                              "{\"status\":\"error\",\"msg\":\"Could not open logs directory\"}");
                 return;
             }
-            String filepath = "/logs/" + filename;
-            if (SD.exists(filepath)) {
-                AsyncWebServerResponse *response = request->beginResponse(SD, filepath, "text/plain");
-                response->addHeader("Content-Disposition", "attachment; filename=" + filename);
-                request->send(response);
-            } else {
-                request->send(404, "application/json", "{\"status\":\"error\",\"msg\":\"File not found\"}");
+            for (File file = root.openNextFile(); file; file = root.openNextFile()) {
+                if (!file.isDirectory()) {
+                    JsonObject entry = files.add<JsonObject>();
+                    entry["name"] = file.name();
+                    entry["size"] = file.size();
+                }
+                file.close();
             }
-        } else {
-            request->send(400, "application/json", "{\"status\":\"error\",\"msg\":\"Missing 'file' param\"}");
+            root.close();
         }
+        String output;
+        serializeJson(doc, output);
+        request->send(200, "application/json", output);
+    });
+
+    httpServer->on("/api/logs/download", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        if (!requireManagementAuth(request)) return;
+        if (!request->hasParam("file")) {
+            request->send(400, "application/json",
+                          "{\"status\":\"error\",\"msg\":\"Missing 'file' param\"}");
+            return;
+        }
+        const String filename = request->getParam("file")->value();
+        if (filename.indexOf("..") >= 0 || filename.indexOf('/') >= 0 ||
+            filename.indexOf('\\') >= 0 || filename.indexOf('\r') >= 0 ||
+            filename.indexOf('\n') >= 0) {
+            request->send(400, "application/json",
+                          "{\"status\":\"error\",\"msg\":\"Invalid filename\"}");
+            return;
+        }
+        const String filepath = "/logs/" + filename;
+        if (!SD.exists(filepath)) {
+            request->send(404, "application/json",
+                          "{\"status\":\"error\",\"msg\":\"File not found\"}");
+            return;
+        }
+        AsyncWebServerResponse* response =
+            request->beginResponse(SD, filepath, "text/plain");
+        response->addHeader("Content-Disposition", "attachment; filename=" + filename);
+        request->send(response);
     });
     #endif
     
@@ -154,92 +145,83 @@ bool SkySweepWebServer::begin(bool accessPointMode) {
         this->handleNotFound(request);
     });
     
-    // --- OTA Update Endpoint ---
-    httpServer->on("/api/ota", HTTP_POST, 
-        // Response handler (after upload)
-        [](AsyncWebServerRequest* request) {
-            bool success = s_otaSuccess;  // only true when firmware was actually written & verified
-            AsyncWebServerResponse* response = request->beginResponse(
-                success ? 200 : 500, "application/json",
-                success ? "{\"status\":\"ok\",\"msg\":\"Rebooting...\"}"
-                        : "{\"status\":\"error\",\"msg\":\"Update failed\"}"
-            );
-            response->addHeader("Connection", "close");
-            request->send(response);
-            if (success) {
-                delay(1000);
-                ESP.restart();
+    // Runtime configuration is persisted for the next boot. The existing
+    // network stays active until a deliberate reboot; this API never claims
+    // hot application.
+    httpServer->on(
+        "/api/config", HTTP_POST, [this](AsyncWebServerRequest* request) {
+            String* body = static_cast<String*>(request->_tempObject);
+            if (!requireManagementAuth(request)) {
+                delete body;
+                request->_tempObject = nullptr;
+                return;
             }
+            if (request->contentLength() > WEB_CONFIG_BODY_MAX_BYTES) {
+                delete body;
+                request->_tempObject = nullptr;
+                request->send(413, "application/json",
+                              "{\"status\":\"error\",\"msg\":\"Request too large\"}");
+                return;
+            }
+            const bool saved = body && configManager.fromJSON(body->c_str());
+            delete body;
+            request->_tempObject = nullptr;
+            if (!saved) {
+                request->send(400, "application/json",
+                              "{\"status\":\"error\",\"msg\":\"Invalid configuration\"}");
+                return;
+            }
+            request->send(200, "application/json",
+                          "{\"status\":\"ok\",\"msg\":\"Saved; reboot required for network changes\"}");
+            Serial.println("[CONFIG] Updated via authenticated web API");
         },
-        // Upload handler (chunk by chunk)
-        [](AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data, size_t len, bool final) {
-            if (index == 0) {
-                s_otaSuccess = false;
-                Serial.printf("[OTA] Starting update: %s (%u bytes)\n", filename.c_str(), request->contentLength());
-                if (!Update.begin(request->contentLength(), U_FLASH)) {
-                    Update.printError(Serial);
-                    return;
-                }
-            }
-            if (Update.isRunning()) {
-                if (Update.write(data, len) != len) {
-                    Update.printError(Serial);
-                    Update.abort();
-                    return;
-                }
-            }
-            if (final) {
-                if (Update.end(true)) {
-                    s_otaSuccess = true;
-                    Serial.printf("[OTA] Update success: %u bytes\n", index + len);
-                } else {
-                    Update.printError(Serial);
-                }
-            }
-        }
-    );
-    
-    // --- Runtime Config API ---
-    httpServer->on("/api/config", HTTP_POST, 
-        [](AsyncWebServerRequest* request) {},  // body handler below
         nullptr,
-        [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
-            // Accumulate the body across chunks instead of writing one byte past the
-            // framework buffer (data[len]=0) and instead of assuming a single chunk.
-            static String body;
-            if (index == 0) body = "";
-            if (total <= 8192) body.concat((const char*)data, len);
-            if (index + len == total) {
-                if (configManager.fromJSON(body.c_str())) {
-                    request->send(200, "application/json", "{\"status\":\"ok\"}");
-                    Serial.println("[CONFIG] Updated via web API");
-                } else {
-                    request->send(400, "application/json", "{\"status\":\"error\",\"msg\":\"Invalid JSON\"}");
-                }
-                body = "";
+        [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index,
+           size_t total) {
+            if (index == 0) {
+                if (total > WEB_CONFIG_BODY_MAX_BYTES) return;
+                String* body = new String();
+                body->reserve(total);
+                request->_tempObject = body;
             }
+            String* body = static_cast<String*>(request->_tempObject);
+            if (body && index + len <= WEB_CONFIG_BODY_MAX_BYTES) {
+                body->concat(reinterpret_cast<const char*>(data), len);
+            }
+        });
+
+    httpServer->on("/api/config/reset", HTTP_POST, [this](AsyncWebServerRequest* request) {
+        if (!requireManagementAuth(request)) return;
+        if (!configManager.reset()) {
+            request->send(500, "application/json",
+                          "{\"status\":\"error\",\"msg\":\"Could not reset configuration\"}");
+            return;
         }
-    );
-    
-    httpServer->on("/api/config/reset", HTTP_POST, [](AsyncWebServerRequest* request) {
-        configManager.reset();
-        request->send(200, "application/json", "{\"status\":\"ok\",\"msg\":\"Config reset to defaults\"}");
+        request->send(
+            200, "application/json",
+            "{\"status\":\"ok\",\"msg\":\"Factory reset saved; reboot required. New AP credentials will be displayed on boot.\"}");
     });
-    
-    // --- Power Management API ---
-    httpServer->on("/api/power", HTTP_POST, [](AsyncWebServerRequest* request) {
-        if (request->hasParam("mode")) {
-            int mode = request->getParam("mode")->value().toInt();
-            if (mode >= 0 && mode <= 3) {
-                powerManager.setMode((PowerMode)mode);
-                String resp = "{\"status\":\"ok\",\"mode\":\"" + String(powerManager.getModeName()) + "\"}";
-                request->send(200, "application/json", resp);
-            } else {
-                request->send(400, "application/json", "{\"status\":\"error\",\"msg\":\"mode: 0=Full,1=Balanced,2=Low,3=Sleep\"}");
-            }
-        } else {
-            request->send(400, "application/json", "{\"status\":\"error\",\"msg\":\"missing 'mode' param\"}");
+
+    httpServer->on("/api/power", HTTP_POST, [this](AsyncWebServerRequest* request) {
+        if (!requireManagementAuth(request)) return;
+        if (!request->hasParam("mode")) {
+            request->send(400, "application/json",
+                          "{\"status\":\"error\",\"msg\":\"missing 'mode' param\"}");
+            return;
         }
+        const String mode = request->getParam("mode")->value();
+        if (mode == "0") {
+            powerManager.setMode(POWER_FULL);
+        } else if (mode == "1") {
+            powerManager.setMode(POWER_BALANCED);
+        } else {
+            request->send(400, "application/json",
+                          "{\"status\":\"error\",\"msg\":\"mode: 0=Full,1=Balanced\"}");
+            return;
+        }
+        const String response =
+            "{\"status\":\"ok\",\"mode\":\"" + String(powerManager.getModeName()) + "\"}";
+        request->send(200, "application/json", response);
     });
     
     
@@ -302,9 +284,6 @@ void SkySweepWebServer::update() {
         JsonObject storage = modules.add<JsonObject>();
         storage["name"] = "microSD";
         storage["on"] = true;
-        JsonObject remoteId = modules.add<JsonObject>();
-        remoteId["name"] = "Remote ID (experimental)";
-        remoteId["on"] = true;
         
         String output;
         serializeJson(doc, output);
@@ -423,10 +402,7 @@ void SkySweepWebServer::broadcastSystemStatus(const char* status) {
 }
 
 IPAddress SkySweepWebServer::getIPAddress() const {
-    if (config.apMode) {
-        return WiFi.softAPIP();
-    }
-    return WiFi.localIP();
+    return WiFi.softAPIP();
 }
 
 uint16_t SkySweepWebServer::getConnectedClients() const {

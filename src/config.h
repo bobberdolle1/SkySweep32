@@ -10,14 +10,20 @@
 
 #include "generated/hardware_rev_c.h"
 
-// Network defaults. Change runtime values through the local web UI after the
-// first physical bring-up; the firmware must not imply that a radio path has
-// been calibrated merely because it is enabled here.
-#define WIFI_AP_SSID "SkySweep32"
-#define WIFI_AP_PASSWORD "skysweep32"
+// The first boot generates and persists a unique WPA2 AP credential. The
+// password is intentionally never a source constant or GET API field.
+#define WIFI_AP_SSID_PREFIX "SkySweep32"
 #define WIFI_AP_CHANNEL 6
 #define WIFI_MAX_CLIENTS 4
 #define WEB_SERVER_PORT 80
+#define WEB_MANAGEMENT_USERNAME "admin"
+#define WEB_CONFIG_BODY_MAX_BYTES 2048
+
+// Remote ID code remains available for an explicitly opted-in experimental
+// build. It is not part of the canonical Prototype #1 runtime.
+#ifndef ENABLE_EXPERIMENTAL_REMOTE_ID
+#define ENABLE_EXPERIMENTAL_REMOTE_ID 0
+#endif
 
 // Relative activity thresholds for normalized 0–100 receiver energy/RSSI.
 // They are not transmitter identity, range, intent, or threat thresholds.

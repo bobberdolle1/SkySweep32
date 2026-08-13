@@ -11,19 +11,17 @@
 #include <AsyncTCP.h>
 #include <ArduinoJson.h>
 
-struct WebServerConfig {
-    char ssid[32];
-    char password[64];
-    bool apMode;
-};
 
 class SkySweepWebServer {
 private:
     AsyncWebServer* httpServer;
     AsyncWebSocket* webSocket;
-    WebServerConfig config;
     bool isRunning;
     uint32_t lastBroadcastTime;
+    char managementPassword[64];
+
+    bool requireManagementAuth(AsyncWebServerRequest* request) const;
+    bool configureNetwork();
     
     // Route handlers
     void handleRoot(AsyncWebServerRequest* request);
@@ -42,7 +40,7 @@ public:
     SkySweepWebServer();
     ~SkySweepWebServer();
     
-    bool begin(bool accessPointMode = true);
+    bool begin();
     void stop();
     void update();
     

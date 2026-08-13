@@ -5,9 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SkySweep32 Passive RF Monitor</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-#map{height:300px;border-radius:8px;z-index:1}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e1a;color:#e0e6f0;min-height:100vh}
 .header{background:linear-gradient(135deg,#1a1f35 0%,#0d1117 100%);padding:16px 24px;border-bottom:1px solid #30363d;display:flex;justify-content:space-between;align-items:center}
@@ -37,9 +35,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e1a;color:#e0e6f
 .activity-level.high{color:#f85149}
 .activity-level.critical{color:#f85149;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.drone-list{max-height:200px;overflow-y:auto}
-.drone-item{display:flex;justify-content:space-between;padding:8px;margin-bottom:4px;background:#0d1117;border-radius:6px;font-size:13px}
-.drone-item .id{color:#58a6ff;font-weight:600}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .stat{background:#0d1117;padding:12px;border-radius:8px;text-align:center}
 .stat .value{font-size:22px;font-weight:700;color:#58a6ff}
@@ -87,19 +82,6 @@ footer{text-align:center;padding:16px;color:#484f58;font-size:12px}
       <div style="margin-top:12px;color:#8b949e" id="activityBasis">Грубое энергетическое наблюдение; источник не идентифицирован</div>
     </div>
   </div>
-  <!-- Experimental Remote ID messages -->
-  <div class="card">
-    <h2> Сообщения Remote ID (экспериментально)</h2>
-    <div class="drone-list" id="droneList">
-      <div style="color:#484f58;text-align:center;padding:20px">Сообщений Remote ID пока нет</div>
-    </div>
-  </div>
-  <!-- Map -->
-  <div class="card" style="grid-column:1/-1">
-    <h2> Карта сообщений Remote ID (экспериментально)</h2>
-    <div id="map"></div>
-    <div style="margin-top:8px;font-size:11px;color:#484f58">UAS &nbsp; Операторы &nbsp; Только данные принятых сообщений Remote ID</div>
-  </div>
   <!-- System Stats -->
   <div class="card">
     <h2> Статус Системы</h2>
@@ -107,7 +89,6 @@ footer{text-align:center;padding:16px;color:#484f58;font-size:12px}
       <div class="stat"><div class="value" id="uptime">0с</div><div class="label">Аптайм</div></div>
       <div class="stat"><div class="value" id="heap">0</div><div class="label">ОЗУ (КБ)</div></div>
       <div class="stat"><div class="value" id="wsClients">0</div><div class="label">Клиентов</div></div>
-      <div class="stat"><div class="value" id="detCount">0</div><div class="label">Remote ID</div></div>
       <div class="stat"><div class="value" id="batPct">--%</div><div class="label">Батарея</div></div>
       <div class="stat"><div class="value" id="pwrMode">--</div><div class="label">Режим</div></div>
       <div class="stat"><div class="value" id="batV">--В</div><div class="label">Вольтаж</div></div>
@@ -117,26 +98,6 @@ footer{text-align:center;padding:16px;color:#484f58;font-size:12px}
       <h2 style="margin-bottom:8px">Модули</h2>
       <div id="moduleList"></div>
     </div>
-    <div style="margin-top:16px;border-top:1px solid #30363d;padding-top:12px">
-      <h2 style="margin-bottom:8px">Обновление прошивки (OTA)</h2>
-      <form id="otaForm" style="display:flex;flex-direction:column;gap:8px" onsubmit="event.preventDefault();uploadFirmware()">
-        <input type="file" id="otaFile" accept=".bin" style="font-size:11px;background:#0d1117;border:1px solid #30363d;border-radius:4px;padding:4px;color:#8b949e;width:100%" required>
-        <button type="submit" id="otaBtn" style="background:#1f6feb;color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px"> Обновить прошивку</button>
-      </form>
-      <div id="otaProgress" style="margin-top:8px;font-size:11px;color:#8b949e;display:none">Загрузка...</div>
-    </div>
-  </div>
-  <!-- SD Card Logs -->
-  <div class="card" id="sdCardLogsCard" style="display:none">
-    <h2> Логи на SD-карте</h2>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div id="sdLogsList" style="max-height:180px;overflow-y:auto;background:#0d1117;border-radius:8px;padding:8px;font-family:monospace;font-size:12px;border:1px solid #30363d;display:flex;flex-direction:column;gap:4px">
-        <div style="color:#8b949e;text-align:center;padding:12px">Загрузка списка логов...</div>
-      </div>
-      <button style="width:100%;background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:8px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="loadSDLogs()">
-         Обновить список
-      </button>
-    </div>
   </div>
   <!-- Activity Log -->
   <div class="card" style="grid-column:1/-1">
@@ -145,54 +106,9 @@ footer{text-align:center;padding:16px;color:#484f58;font-size:12px}
   </div>
 </div>
 <footer>SkySweep32 v<span id="version-val">...</span> | Пассивный RF-монитор | <a href="https://github.com/bobberdolle1/SkySweep32" style="color:#58a6ff">GitHub</a></footer>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-let map,droneMarkers={},mapReady=false;
-function initMap(){
-  try{
-    map=L.map('map',{zoomControl:true}).setView([0,0],2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'OSM'}).addTo(map);
-    mapReady=true;
-  }catch(e){console.log('Map init deferred')}
-}
-function remoteIdPopup(id, alt) {
-  const box=document.createElement('div');
-  const name=document.createElement('strong');
-  name.textContent=id||'Unknown';
-  const altitude=document.createElement('div');
-  altitude.textContent='Alt: '+(alt||0).toFixed(0)+'m';
-  box.append(name,altitude);
-  return box;
-}
-function updateMapDrone(id,lat,lon,alt){
-  if(!mapReady||!lat||!lon)return;
-  const key='d_'+id;
-  if(droneMarkers[key]){
-    droneMarkers[key].setLatLng([lat,lon]);
-    droneMarkers[key].setPopupContent(remoteIdPopup(id,alt));
-  }else{
-    const icon=L.divIcon({className:'',html:'<div style="width:14px;height:14px;background:#58a6ff;border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px #58a6ff"></div>',iconSize:[14,14],iconAnchor:[7,7]});
-    droneMarkers[key]=L.marker([lat,lon],{icon:icon}).addTo(map).bindPopup(remoteIdPopup(id,alt));
-    map.setView([lat,lon],15);
-  }
-}
-function updateMapOperator(id,lat,lon){
-  if(!mapReady||!lat||!lon)return;
-  const key='o_'+id;
-  if(droneMarkers[key]){
-    droneMarkers[key].setLatLng([lat,lon]);
-  }else{
-    const icon=L.divIcon({className:'',html:'<div style="width:10px;height:10px;background:#d29922;border:2px solid #fff;border-radius:50%"></div>',iconSize:[10,10],iconAnchor:[5,5]});
-    const label=document.createElement('span');
-    label.textContent='Operator: '+(id||'Unknown');
-    droneMarkers[key]=L.marker([lat,lon],{icon:icon}).addTo(map).bindPopup(label);
-  }
-}
-try{initMap()}catch(e){}
-</script>
 <script>
 const WS_URL='ws://'+location.hostname+':80/ws';
-let ws,reconTimer,detections=0;
+let ws,reconTimer;
 const moduleMap={'855-925':0,'2.4 GHz':1,'5.8 GHz':2};
 function connect(){
   ws=new WebSocket(WS_URL);
@@ -223,24 +139,6 @@ function handleMsg(d){
     el.className='activity-level '+d.level.toLowerCase();
     document.getElementById('activityBasis').textContent=d.basis||'';
     if(d.level!=='NONE')addLog('RF-активность: '+el.textContent+' ('+(d.basis||'источник не идентифицирован')+')','warn');
-  }else if(d.type==='drone'){
-    detections++;
-    document.getElementById('detCount').textContent=detections;
-    const list=document.getElementById('droneList');
-    if(detections===1)list.replaceChildren();
-    const item=document.createElement('div');
-    item.className='drone-item';
-    const id=document.createElement('span');
-    id.className='id';
-    id.textContent=d.id||'Unknown';
-    const position=document.createElement('span');
-    position.textContent=d.lat ? d.lat.toFixed(4)+', '+d.lon.toFixed(4) : 'Нет GPS';
-    const altitude=document.createElement('span');
-    altitude.textContent=d.alt ? d.alt.toFixed(0)+'м' : '';
-    item.append(id,position,altitude);
-    list.prepend(item);
-    addLog('Получено Remote ID: '+d.id,'det');
-    updateMapDrone(d.id,d.lat,d.lon,d.alt);
   }else if(d.type==='status'){
     document.getElementById('uptime').textContent=formatUptime(d.uptime);
     document.getElementById('heap').textContent=(d.heap/1024).toFixed(0);
@@ -249,7 +147,7 @@ function handleMsg(d){
       document.getElementById('batPct').textContent=d.batPct+'%';
       document.getElementById('batPct').style.color=d.batPct<15?'#f85149':d.batPct<30?'#d29922':'#3fb950';
       document.getElementById('batV').textContent=d.batV.toFixed(2)+'V';
-      const mMap={'Full':'Полный','Balanced':'Сбаланс.','Low':'Эконом','Sleep':'Сон'};
+      const mMap={'Full':'Полный','Balanced':'Сбаланс.'};
       document.getElementById('pwrMode').textContent=mMap[d.pwrMode]||d.pwrMode||'--';
       document.getElementById('estMin').textContent=d.estMin>60?Math.floor(d.estMin/60)+'ч '+d.estMin%60+'м':d.estMin+'м';
     }
@@ -261,12 +159,6 @@ function handleMsg(d){
         badge.textContent=m.name;
         return badge;
       }));
-      const sd = d.modules.find(m => m.name === 'microSD');
-      const sdc = document.getElementById('sdCardLogsCard');
-      if (sd && sd.on && sdc && sdc.style.display === 'none') {
-        sdc.style.display = 'block';
-        loadSDLogs();
-      }
     }
   }
 }
@@ -294,79 +186,7 @@ fetch('/api/status').then(r=>r.json()).then(d=>{
   document.getElementById('version-val').textContent=d.version||'';
 }).catch(()=>{});
 
-function uploadFirmware() {
-  const fileInput = document.getElementById('otaFile');
-  const btn = document.getElementById('otaBtn');
-  const prog = document.getElementById('otaProgress');
-  if (!fileInput.files.length) return;
-  const file = fileInput.files[0];
-  const formData = new FormData();
-  formData.append('firmware', file);
-  btn.disabled = true;
-  btn.textContent = 'Загрузка...';
-  prog.style.display = 'block';
-  prog.textContent = 'Отправка файла прошивки...';
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/ota', true);
-  xhr.upload.onprogress = (e) => {
-    if (e.lengthComputable) {
-      const pct = (e.loaded / e.total * 100).toFixed(0);
-      prog.textContent = `Загрузка: ${pct}%`;
-    }
-  };
-  xhr.onload = () => {
-    if (xhr.status === 200) {
-      prog.textContent = 'Успешно! Плата перезагружается. Подождите 5 секунд...';
-      setTimeout(() => location.reload(), 6000);
-    } else {
-      prog.textContent = 'Ошибка обновления!';
-      btn.disabled = false;
-      btn.textContent = ' Обновить прошивку';
-    }
-  };
-  xhr.onerror = () => {
-    prog.textContent = 'Сбой сети!';
-    btn.disabled = false;
-    btn.textContent = ' Обновить прошивку';
-  };
-  xhr.send(formData);
-}
 
-function loadSDLogs() {
-  const list = document.getElementById('sdLogsList');
-  if (!list) return;
-  list.textContent = 'Загрузка списка...';
-  fetch('/api/logs')
-    .then(r => r.json())
-    .then(files => {
-      sdLogsLoaded = true;
-      if (!files || !files.length) {
-        list.textContent = 'Нет файлов логов';
-        return;
-      }
-      list.replaceChildren(...files.map(f => {
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:4px;border-bottom:1px solid #21262d;gap:8px';
-        const name = document.createElement('span');
-        name.style.cssText = 'color:#58a6ff;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;flex:1;text-align:left';
-        name.textContent = f.name;
-        name.title = f.name;
-        const size = document.createElement('span');
-        size.style.cssText = 'color:#8b949e;font-size:11px;min-width:60px;text-align:right';
-        size.textContent = f.size > 1024*1024 ? (f.size/(1024*1024)).toFixed(2)+' MB' : (f.size/1024).toFixed(1)+' KB';
-        const download = document.createElement('a');
-        download.href = '/api/logs/download?file=' + encodeURIComponent(f.name);
-        download.download = '';
-        download.textContent = 'Скачать';
-        download.style.cssText = 'background:#238636;color:white;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px;text-decoration:none;font-weight:bold;display:inline-block';
-        row.append(name, size, download);
-        return row;
-      }));
-    })
-    .catch(() => {
-      list.textContent = 'Ошибка загрузки';
-    });
-}
 
 
 </script>
