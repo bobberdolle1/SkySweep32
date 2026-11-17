@@ -1,0 +1,26 @@
+ERC report (2026-08-14T13:21:46, Encoding UTF8)
+Report includes: Errors, Warnings
+
+***** Sheet /
+[footprint_filter]: Назначенное посад. место (jst_sh_sm02b-srss-tb_1x02-1mp_p1.00mm_horizontal) не соответствует фильтрам посад. мест (Connector*:*_1x??_*)
+    ; warning
+    @(340.36 mm, 72.39 mm): Symbol J9 [Conn_01x02]
+
+***** Sheet /01 — USB, Battery and Power/
+
+***** Sheet /03 — 2.4 GHz and Sub-GHz Receivers/
+
+***** Sheet /06 — Wide 5.x Detection and Analog Video Validation/
+
+***** Sheet /05 — GNSS, Storage and Display/
+
+***** Sheet /02 — ESP32-S3 Control and Alerts/
+
+***** Sheet /04 — 5.8 GHz Receiver/
+
+***** Sheet /07 — ADC, Control Expansion, and SkyPort/
+
+ ** ERC messages: 1  Errors 0  Warnings 1
+
+ ** Ignored checks:
+    - None

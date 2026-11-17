@@ -314,9 +314,99 @@
 			)
 		)
 	)
+	(sheet
+		(at 22 219)
+		(size 70 32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "a6a5892c-63cf-4a41-86f3-8b7705191ef6")
+		(property "Sheetname" "06 — Wide 5.x Detection and Analog Video Validation"
+			(at 22 218.2884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "06_detector_video.kicad_sch"
+			(at 22 251.5846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project None
+				(path "/eea4a693-4a80-47ee-908a-3c84eab7084c"
+					(page "1")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 112 219)
+		(size 70 32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "b89f7831-2947-49d6-848e-a9b091f32a76")
+		(property "Sheetname" "07 — ADC, Control Expansion, and SkyPort"
+			(at 112 218.2884 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "07_skyport.kicad_sch"
+			(at 112 251.5846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project None
+				(path "/eea4a693-4a80-47ee-908a-3c84eab7084c"
+					(page "1")
+				)
+			)
+		)
+	)
 	(sheet_instances
 		(path "/"
 			(page "1")
+		)
+		(path "/a6a5892c-63cf-4a41-86f3-8b7705191ef6"
+			(page "6")
+		)
+		(path "/b89f7831-2947-49d6-848e-a9b091f32a76"
+			(page "7")
 		)
 	)
 	(embedded_fonts no)
