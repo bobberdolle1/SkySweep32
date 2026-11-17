@@ -13,6 +13,7 @@
 *.map
 build_artifacts/
 test/host/test_parsers
+test/host/*.exe
 *.o
 *.a
 *.so
@@ -26,15 +27,23 @@ __pycache__/
 .cache/
 .pytest_cache/
 
-# CAD session, backup, and reconstructed-routing intermediates
+# CAD session, local history, backup, and reconstructed-routing intermediates
+.history/
 *.kicad_prl
 *-backups/
 *.kicad_sch-bak
 *.kicad_pcb-bak
+*-save.kicad_*
+_autosave-*
+fp-info-cache
+sym-info-cache
 hardware/rev_c/*.net
 hardware/rev_c/routing_input.*
 hardware/rev_c/*_placed.kicad_*
 hardware/rev_c/logs/
+
+# Root local archives
+/*.zip
 
 # OS/editor temporary files
 .DS_Store
